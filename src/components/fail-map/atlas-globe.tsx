@@ -59,6 +59,7 @@ interface AtlasGlobeProps {
   onLocation: (location: Location) => void;
   onZoom?: (zoom: number) => void;
   onUnavailable?: () => void;
+  researchOnMapClick?: boolean;
   keyOpen?: boolean;
   onKey?: () => void;
   activeCategory?: string;
@@ -224,11 +225,12 @@ export function AtlasGlobe(props: AtlasGlobeProps) {
         }
       });
       /**
-       * A click on the globe asks a question; it no longer opens a form.
-       * Mapbox keeps double click bound to zoom, so the resolution waits long
-       * enough for a second click to cancel it, and unnamed points such as
-       * open water are told they are uncharted rather than offered for
-       * research.
+       * A click on the globe resolves the place first. Signed-out readers are
+       * sent straight to the research gate, while readers who can research now
+       * still get a small confirmation before opening the composer. Mapbox
+       * keeps double click bound to zoom, so the resolution waits long enough
+       * for a second click to cancel it, and unnamed points such as open water
+       * are told they are uncharted rather than offered for research.
        */
       instance.on('dblclick', () => {
         window.clearTimeout(pendingClick);
@@ -271,7 +273,12 @@ export function AtlasGlobe(props: AtlasGlobeProps) {
           setAnchor({ x: at.x, y: at.y });
           if (isChartedLocation(location)) {
             setUncharted(false);
-            setProposal(location);
+            if (callbacks.current.researchOnMapClick) {
+              setProposal(null);
+              callbacks.current.onLocation(location);
+            } else {
+              setProposal(location);
+            }
           } else {
             setProposal(null);
             setUncharted(true);
