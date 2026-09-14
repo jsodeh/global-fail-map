@@ -74,7 +74,14 @@ export function SignupGateDialog({
           ) : (
             <ArrowUpRight size={17} />
           )}
-          {connecting ? 'One moment...' : 'Continue with Valyu'}
+          {connecting ? (
+            'One moment...'
+          ) : (
+            <>
+              Continue with
+              <span className="valyu-auth-logo" aria-label="Valyu" role="img" />
+            </>
+          )}
         </button>
         <button className="signup-later" onClick={onDismiss}>
           Keep looking around

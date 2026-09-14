@@ -1463,6 +1463,34 @@ textarea:focus-visible {
 .signup-dialog .primary-button {
   width: 100%;
 }
+.valyu-auth-logo {
+  --valyu-logo: url('https://4ealzrotsszllxtz.public.blob.vercel-storage.com/logo.svg');
+  position: relative;
+  display: inline-block;
+  width: 66px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.valyu-auth-logo,
+.valyu-auth-logo::before,
+.valyu-auth-logo::after {
+  background: #fff;
+  mask: var(--valyu-logo) center / contain no-repeat;
+  -webkit-mask: var(--valyu-logo) center / contain no-repeat;
+}
+.valyu-auth-logo::before,
+.valyu-auth-logo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.valyu-auth-logo::before {
+  transform: translateX(0.55px);
+}
+.valyu-auth-logo::after {
+  transform: translateY(0.55px);
+}
 .signup-later {
   display: block;
   width: 100%;

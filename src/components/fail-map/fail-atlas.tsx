@@ -1315,6 +1315,7 @@ export function FailAtlas({
         onLocation={chooseLocation}
         onZoom={trackZoom}
         onUnavailable={globeUnavailable}
+        researchOnMapClick={gateApplies}
         keyOpen={legendOpen}
         onKey={() => {
           setExplorerOpen(false);
