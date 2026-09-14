@@ -143,7 +143,7 @@ Hosted mode lets users sign in with Valyu. OAuth tokens stay in encrypted HTTP-o
 NEXT_PUBLIC_APP_MODE=valyu
 NEXT_PUBLIC_APP_URL=https://your-app.example
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk_your_public_token
-NEXT_PUBLIC_VALYU_SUPABASE_URL=https://your-provider.supabase.co
+NEXT_PUBLIC_VALYU_AUTH_URL=https://your-auth-host.example
 NEXT_PUBLIC_VALYU_CLIENT_ID=your_client_id
 VALYU_CLIENT_SECRET=your_client_secret
 VALYU_SESSION_SECRET=at_least_32_random_characters

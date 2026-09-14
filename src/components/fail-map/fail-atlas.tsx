@@ -25,8 +25,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuthStore } from '@/lib/stores/use-auth-store';
+import { useSignupGate } from '@/lib/stores/use-signup-gate';
 import { archiveSearchUrl, isNigerianLocation } from '@/lib/archiving';
 import { ReportPanel } from './report-panel';
+import { SignupGateDialog } from './signup-gate-dialog';
 import { ResearchOptions } from './research-options';
 import { AtlasDock } from './atlas-dock';
 import { AtlasLegend } from './atlas-legend';
@@ -65,7 +67,29 @@ export function FailAtlas({
     loading: authLoading,
   } = useAuthStore();
   const signedIn = !!user;
+  const {
+    trigger: gateTrigger,
+    hydrate: hydrateGate,
+    gateRandom,
+    gateStory,
+    gateResearch,
+    dismiss: dismissGate,
+    reset: resetGate,
+  } = useSignupGate();
+  /*
+   * A self-hosted atlas has no account to sell, and a reader who already has
+   * one has bought. Everyone else is counted.
+   */
+  const gateApplies = !isSelfHosted && !signedIn;
+  /*
+   * Counting starts immediately, but the ask waits until the session request
+   * has answered. Otherwise a slow session lookup either lets a whole visit
+   * through untallied or greets a signed-in reader with a sign-up wall.
+   */
+  const gateEnforced = gateApplies && !authLoading;
   const searchInput = useRef<HTMLInputElement>(null);
+  /** The place behind a gated research click, kept for the sign-up round trip. */
+  const gatedLocation = useRef<Location | null>(null);
   const focusSearchOnOpen = useRef(false);
   const reportRequest = useRef<AbortController | null>(null);
   const reportUrl = useRef('');
@@ -122,8 +146,19 @@ export function FailAtlas({
    * marker key lives on the right of the screen, so it does not collide with
    * the invite.
    */
-  const inviteHidden =
-    headingDocked || reportOpen || explorerOpen || mapless;
+  const inviteHidden = headingDocked || reportOpen || explorerOpen || mapless;
+
+  useEffect(() => {
+    hydrateGate();
+  }, [hydrateGate]);
+
+  /*
+   * Signing in settles the account question, so the tally is thrown away
+   * rather than left to fire at a reader who has already signed up.
+   */
+  useEffect(() => {
+    if (signedIn) resetGate();
+  }, [signedIn, resetGate]);
 
   /**
    * On desktop the marker key is a permanent part of the atlas. On phones it
@@ -484,8 +519,33 @@ export function FailAtlas({
     [updateReportUrl],
   );
 
+  /**
+   * The explore list is the one place a reader browses story after story, so
+   * it is the one place the story tally is kept. A marker on the globe, a
+   * shared link and a story reopened from the report panel all stay free:
+   * they are single destinations, not a browsing habit.
+   */
+  const exploreExample = useCallback(
+    (example: FailExample) => {
+      if (gateApplies && gateStory(example.id, gateEnforced)) return;
+      chooseExample(example);
+    },
+    [chooseExample, gateApplies, gateEnforced, gateStory],
+  );
+
   const chooseLocation = useCallback(
     (location: Location) => {
+      /*
+       * Research cannot run without an account, so the ask comes before the
+       * composer rather than after the reader has filled it in, and it comes
+       * immediately. Unlike a story, there is no version of this action that
+       * works signed out, so waiting on the session lookup would only show
+       * the reader a composer they cannot submit.
+       */
+      if (gateApplies) {
+        gatedLocation.current = location;
+        if (gateResearch()) return;
+      }
       setPendingLocation(location);
       setResearchCategory(category);
       setComposerError('');
@@ -494,8 +554,18 @@ export function FailAtlas({
       setShowInvestigation(false);
       setExplorerOpen(false);
     },
-    [category],
+    [category, gateApplies, gateResearch],
   );
+
+  /**
+   * Walking away from the ask also drops the place behind it. Held any
+   * longer, a later plain sign-in would carry an abandoned location into the
+   * research draft and open a composer the reader never asked for.
+   */
+  function dismissSignupGate() {
+    gatedLocation.current = null;
+    dismissGate();
+  }
 
   function closeReport() {
     reportRequest.current?.abort();
@@ -507,6 +577,7 @@ export function FailAtlas({
   }
 
   function surprise() {
+    if (gateApplies && gateRandom(gateEnforced)) return;
     const pool = filteredExamples.length ? filteredExamples : examples;
     const otherExamples = pool.filter(
       (item) => item.id !== selectedExample?.id,
@@ -525,11 +596,17 @@ export function FailAtlas({
       );
       if (researchId)
         sessionStorage.setItem('global-fail-map-resume', researchId);
-      if (pendingLocation)
+      /*
+       * The gate fires before the composer exists, so the place the reader
+       * asked about is held here. Without it, signing up would land them back
+       * on a bare globe having forgotten why they signed up.
+       */
+      const draftLocation = pendingLocation || gatedLocation.current;
+      if (draftLocation)
         sessionStorage.setItem(
           draftKey,
           JSON.stringify({
-            location: pendingLocation,
+            location: draftLocation,
             category: researchCategory,
             instructions,
             mode: researchMode,
@@ -910,7 +987,7 @@ export function FailAtlas({
                     <button
                       className="case-row"
                       key={example.id}
-                      onClick={() => chooseExample(example)}
+                      onClick={() => exploreExample(example)}
                       onMouseEnter={() => setHighlightId(example.id)}
                       onMouseLeave={() => setHighlightId(undefined)}
                       onFocus={() => setHighlightId(example.id)}
@@ -1178,6 +1255,13 @@ export function FailAtlas({
           </form>
         </DialogContent>
       </Dialog>
+
+      <SignupGateDialog
+        trigger={gateTrigger}
+        onDismiss={dismissSignupGate}
+        onSignUp={() => void connect()}
+        connecting={submitting || authLoading}
+      />
 
       <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
         <DialogContent className="about-dialog">
