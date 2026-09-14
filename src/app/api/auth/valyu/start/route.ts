@@ -18,7 +18,7 @@ export const runtime = 'nodejs';
 export async function GET(request: Request) {
   try {
     if (!isHosted()) return NextResponse.redirect(new URL('/', request.url));
-    const provider = process.env.NEXT_PUBLIC_VALYU_SUPABASE_URL;
+    const provider = process.env.NEXT_PUBLIC_VALYU_AUTH_URL;
     const clientId = process.env.NEXT_PUBLIC_VALYU_CLIENT_ID;
     if (!provider || !clientId)
       throw new RequestError(503, 'Valyu sign-in is not configured.');

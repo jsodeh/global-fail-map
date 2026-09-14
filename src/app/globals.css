@@ -1323,7 +1323,8 @@ textarea:focus-visible {
   font-size: 12px;
 }
 .research-dialog,
-.about-dialog {
+.about-dialog,
+.signup-dialog {
   background: #fff;
   color: #171717;
   width: calc(100% - 32px);
@@ -1342,7 +1343,8 @@ textarea:focus-visible {
   margin-bottom: 8px;
 }
 .research-dialog h2,
-.about-dialog h2 {
+.about-dialog h2,
+.signup-dialog h2 {
   font-size: 20px;
   line-height: 1.3;
   font-weight: 600;
@@ -1350,7 +1352,8 @@ textarea:focus-visible {
   margin: 0;
 }
 .research-dialog > p,
-.about-dialog > p {
+.about-dialog > p,
+.signup-dialog > p {
   color: #737373;
   font-size: 13px;
   line-height: 1.75;
@@ -1428,6 +1431,53 @@ textarea:focus-visible {
 .research-dialog .primary-button {
   width: 100%;
 }
+/*
+ * The sign-up ask. It reuses the dialog shell so it reads as part of the
+ * atlas rather than an interruption bolted on, and it always offers a way
+ * back to the map: a reader who is told no twice does not come back.
+ */
+.signup-perks {
+  list-style: none;
+  margin: 18px 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.signup-perks li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #525252;
+}
+.signup-perks li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #262626;
+}
+.signup-dialog .primary-button {
+  width: 100%;
+}
+.signup-later {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  min-height: 40px;
+  background: transparent;
+  border: 0;
+  color: #737373;
+  font-size: 12px;
+}
+.signup-later:hover {
+  color: #262626;
+}
+
 .research-pricing {
   display: flex;
   justify-content: center;
@@ -1621,7 +1671,8 @@ textarea:focus-visible {
     font-size: 16px;
   }
   .research-dialog,
-  .about-dialog {
+  .about-dialog,
+  .signup-dialog {
     padding: 22px;
   }
 }

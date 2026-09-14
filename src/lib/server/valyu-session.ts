@@ -101,7 +101,7 @@ export async function exchangeTokens(
   refresh_token?: string;
   expires_in?: number;
 }> {
-  const provider = process.env.NEXT_PUBLIC_VALYU_SUPABASE_URL;
+  const provider = process.env.NEXT_PUBLIC_VALYU_AUTH_URL;
   const clientId = process.env.NEXT_PUBLIC_VALYU_CLIENT_ID;
   const secret = process.env.VALYU_CLIENT_SECRET;
   if (!provider || !clientId || !secret)
