@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminSession } from '@/lib/stores/use-admin-session';
 import { CheckCircle, XCircle, ExternalLink, Eye } from 'lucide-react';
+import { StateSelect } from '@/components/ui/state-select';
+import { LGASelect } from '@/components/ui/lga-select';
 
 interface Submission {
   id: string;
@@ -41,6 +43,7 @@ export default function SubmissionsPage() {
     tier: 'federal' as 'federal' | 'state' | 'lga',
     mda: '',
     state: '',
+    lga: '',
     sector: '',
     status: 'planned' as any,
   });
@@ -125,6 +128,7 @@ export default function SubmissionsPage() {
         tier: 'federal',
         mda: '',
         state: '',
+        lga: '',
         sector: '',
         status: 'planned',
       });
@@ -182,6 +186,7 @@ export default function SubmissionsPage() {
       tier: 'federal',
       mda: '',
       state: '',
+      lga: '',
       sector: '',
       status: 'planned',
     });
@@ -374,13 +379,25 @@ export default function SubmissionsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       State
                     </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    <StateSelect
                       value={projectData.state}
-                      onChange={(e) =>
-                        setProjectData({ ...projectData, state: e.target.value })
+                      onChange={(value) => {
+                        setProjectData({ ...projectData, state: value, lga: '' });
+                      }}
+                      className="border-gray-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      LGA
+                    </label>
+                    <LGASelect
+                      state={projectData.state}
+                      value={projectData.lga}
+                      onChange={(value) =>
+                        setProjectData({ ...projectData, lga: value })
                       }
+                      className="border-gray-300"
                     />
                   </div>
                   <div>

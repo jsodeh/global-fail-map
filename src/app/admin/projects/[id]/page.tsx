@@ -9,6 +9,8 @@ import { ProjectBudgets } from '@/components/admin/project-budgets';
 import { ProjectStatusUpdates } from '@/components/admin/project-status-updates';
 import { ProjectSources } from '@/components/admin/project-sources';
 import { ProjectFiles } from '@/components/admin/project-files';
+import { StateSelect } from '@/components/ui/state-select';
+import { LGASelect } from '@/components/ui/lga-select';
 
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -309,12 +311,16 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     State
                   </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <StateSelect
                     value={formData.state || ''}
-                    onChange={(e) => handleChange('state', e.target.value)}
-                    placeholder="e.g., Lagos, Kano, Rivers"
+                    onChange={(value) => {
+                      handleChange('state', value);
+                      // Clear LGA when state changes
+                      if (formData.lga) {
+                        handleChange('lga', '');
+                      }
+                    }}
+                    className="border-gray-300"
                   />
                 </div>
 
@@ -322,11 +328,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     LGA (Local Government Area)
                   </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <LGASelect
+                    state={formData.state || ''}
                     value={formData.lga || ''}
-                    onChange={(e) => handleChange('lga', e.target.value)}
+                    onChange={(value) => handleChange('lga', value)}
+                    className="border-gray-300"
                   />
                 </div>
 
