@@ -2,8 +2,66 @@
  * Utilities for converting database projects to map format
  */
 
-import type { FailExample } from '@/components/fail-map/types';
+import type { FailExample, Category } from '@/components/fail-map/types';
 import type { Project } from '@/lib/db/schema';
+
+/**
+ * Map database project sector to map category for icon/color display
+ */
+function sectorToCategory(sector: string | null): Exclude<Category, 'all'> {
+  if (!sector) return 'infrastructure';
+  
+  const mapping: Record<string, Exclude<Category, 'all'>> = {
+    // Infrastructure sectors
+    'roads': 'infrastructure',
+    'bridges': 'infrastructure',
+    'railway': 'infrastructure',
+    'airport': 'infrastructure',
+    'seaport': 'infrastructure',
+    'power': 'infrastructure',
+    'water': 'infrastructure',
+    'housing': 'infrastructure',
+    
+    // Technology sectors
+    'technology': 'technology',
+    'telecommunications': 'technology',
+    'ict': 'technology',
+    'digital': 'technology',
+    
+    // Science sectors
+    'health': 'science',
+    'research': 'science',
+    'laboratory': 'science',
+    
+    // Companies/Economic
+    'agriculture': 'companies',
+    'industry': 'companies',
+    'manufacturing': 'companies',
+    'mining': 'companies',
+    
+    // Visions/Social
+    'education': 'visions',
+    'culture': 'visions',
+    'sports': 'visions',
+    'tourism': 'visions',
+  };
+  
+  // Try exact match first
+  const lowerSector = sector.toLowerCase();
+  if (mapping[lowerSector]) {
+    return mapping[lowerSector];
+  }
+  
+  // Try partial match
+  for (const [key, value] of Object.entries(mapping)) {
+    if (lowerSector.includes(key) || key.includes(lowerSector)) {
+      return value;
+    }
+  }
+  
+  // Default to infrastructure
+  return 'infrastructure';
+}
 
 /**
  * Convert a database project to FailExample format for display on the map
@@ -17,7 +75,7 @@ export function projectToMapExample(project: Project): FailExample {
     country: 'Nigeria', // All our projects are in Nigeria
     lat: parseFloat(project.lat),
     lng: parseFloat(project.lng),
-    category: 'infrastructure' as const, // Default category for now
+    category: sectorToCategory(project.sector), // Map sector to category
     status: project.status,
     statusDate: project.updatedAt?.toString(),
     period: formatProjectPeriod(project.startDate, project.expectedCompletion),

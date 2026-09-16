@@ -472,21 +472,12 @@ export function FailAtlas({ examples }: { examples: FailExample[] }) {
         </a>
       </footer>
       
-      {/* Floating Submit Button */}
-      <button
-        onClick={() => setSubmissionFormOpen(true)}
-        className="fixed bottom-6 right-6 z-[100] flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:shadow-xl"
-        aria-label="Submit a project"
-      >
-        <Send size={20} />
-        <span className="font-medium">Suggest a Project</span>
-      </button>
-
-      {/* Submission Form Dialog */}
-      <SubmissionForm
+      
+      {/* Submission Form Dialog - REMOVED PER USER REQUEST */}
+      {/* <SubmissionForm
         open={submissionFormOpen}
         onOpenChange={setSubmissionFormOpen}
-      />
+      /> */}
       
       {notice && (
         <div className="atlas-toast" role="status">

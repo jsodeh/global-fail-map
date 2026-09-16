@@ -217,6 +217,36 @@ export function AtlasGlobe(props: AtlasGlobeProps) {
             instance.setPaintProperty(layer.id, 'raster-brightness-max', 0.8);
           }
         }
+        
+        // Highlight Nigeria's boundary with green color
+        // Find the admin boundary layers and style them
+        for (const layer of layers) {
+          if (layer.id.includes('admin-0-boundary') || layer.id.includes('admin-1-boundary')) {
+            // Add a filter to only show Nigeria's boundaries
+            instance.setFilter(layer.id, [
+              'any',
+              ['==', ['get', 'iso_3166_1'], 'NG'],
+              ['==', ['get', 'worldview'], 'all']
+            ]);
+            
+            // Style Nigeria's boundary in green
+            if (layer.type === 'line') {
+              instance.setPaintProperty(layer.id, 'line-color', [
+                'case',
+                ['==', ['get', 'iso_3166_1'], 'NG'],
+                '#1a472a', // Nigeria green
+                ['get', 'line-color'] // Default for others
+              ]);
+              instance.setPaintProperty(layer.id, 'line-width', [
+                'case',
+                ['==', ['get', 'iso_3166_1'], 'NG'],
+                3, // Thicker border for Nigeria
+                ['get', 'line-width'] // Default for others
+              ]);
+            }
+          }
+        }
+        
         if (!disposed) setReady(true);
         callbacks.current.onZoom?.(instance.getZoom());
       });
