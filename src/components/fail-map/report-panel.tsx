@@ -235,112 +235,195 @@ export function ReportPanel({
         </header>
 
         <div className="dossier-content" ref={scrollRef}>
-          <aside className="dossier-details">
-            <div className="dossier-meta-group">
-              <strong className="dossier-meta-label">Location</strong>
-              <span className="dossier-meta-value">{location}</span>
-              {coordinates && (
-                <span className="dossier-meta-caption">{coordinates}</span>
+          {/* Hero Section */}
+          <div className="dossier-hero">
+            <div className="dossier-hero-content">
+              <h1 className="dossier-hero-title">{title}</h1>
+              {example.subtitle && (
+                <p className="dossier-hero-subtitle">{example.subtitle}</p>
               )}
-            </div>
-            <div className="dossier-meta-group">
-              <strong className="dossier-meta-label">Status</strong>
-              <span className="dossier-meta-value">{example.status}</span>
-            </div>
-            <div className="dossier-meta-group">
-              <strong className="dossier-meta-label">Period</strong>
-              <span className="dossier-meta-value">{example.period}</span>
-            </div>
-            {readingMinutes > 0 && (
-              <div className="dossier-meta-group">
-                <strong className="dossier-meta-label">Reading time</strong>
-                <span className="dossier-meta-value">
-                  {readingMinutes} {readingMinutes === 1 ? 'minute' : 'minutes'}
+              
+              {/* Status Badge */}
+              <div className="dossier-hero-meta">
+                <span className="dossier-status-badge" data-status={example.status.toLowerCase().replace(/\s+/g, '-')}>
+                  {example.status}
                 </span>
+                <span className="dossier-hero-period">{example.period}</span>
               </div>
-            )}
-            {sections.length > 0 && (
-              <div className="dossier-meta-group">
-                <strong className="dossier-meta-label">Contents</strong>
-                <nav className="dossier-toc">
-                  {sections.map((section) => (
-                    <a key={section.id} href={`#${section.id}`}>
-                      {section.title}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            )}
-          </aside>
+            </div>
+          </div>
 
-          <article className="dossier-report">
-            {loading && <p className="dossier-loading">Loading report...</p>}
-            {loadError && <p className="dossier-error">{loadError}</p>}
-            {!loading && !loadError && markdown && (
-              <>
-                <h1>{title}</h1>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h2: ({ node, ...props }) => {
-                      const text = String(props.children);
-                      const match = body.match(new RegExp(`^##\\s+${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
-                      if (match) {
-                        const index = body.substring(0, match.index).split('\n').filter(l => l.match(/^##\s+/)).length;
-                        return <h2 id={`report-section-${index + 1}`} {...props} />;
-                      }
-                      return <h2 {...props} />;
-                    },
-                  }}
-                >
-                  {body}
-                </ReactMarkdown>
-              </>
-            )}
-          </article>
-
-          {images.length > 0 && (
-            <section className="dossier-images">
-              <h2>Project Images ({images.length})</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                {images.map((image, index) => (
-                  <button
-                    key={image.id}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer group"
-                  >
-                    <Image
-                      src={image.storageUrl}
-                      alt={image.fileName}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                  </button>
-                ))}
+          {/* Main Content Grid */}
+          <div className="dossier-grid">
+            {/* Sidebar */}
+            <aside className="dossier-sidebar">
+              {/* Location Card */}
+              <div className="dossier-card">
+                <div className="dossier-card-header">
+                  <svg className="dossier-card-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <strong>Location</strong>
+                </div>
+                <div className="dossier-card-content">
+                  <p className="dossier-card-primary">{location}</p>
+                  {coordinates && (
+                    <p className="dossier-card-secondary">{coordinates}</p>
+                  )}
+                </div>
               </div>
-            </section>
-          )}
 
-          {sources.length > 0 && (
-            <section className="dossier-sources">
-              <h2>Sources</h2>
-              <div className="dossier-source-list">
-                {sources.map((source, index) => (
-                  <SourceRow key={source.url} source={source} index={index} />
-                ))}
+              {/* Category Card */}
+              <div className="dossier-card">
+                <div className="dossier-card-header">
+                  <svg className="dossier-card-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+                  </svg>
+                  <strong>Category</strong>
+                </div>
+                <div className="dossier-card-content">
+                  <p className="dossier-card-primary capitalize">{example.category}</p>
+                </div>
               </div>
-              {onArchiveSearch && (
-                <button
-                  className="dossier-archive-button"
-                  onClick={onArchiveSearch}
-                >
-                  Search archivi.ng for contemporary press
-                </button>
+
+              {/* Reading Time Card */}
+              {readingMinutes > 0 && (
+                <div className="dossier-card">
+                  <div className="dossier-card-header">
+                    <svg className="dossier-card-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 6v6l4 2" />
+                    </svg>
+                    <strong>Reading Time</strong>
+                  </div>
+                  <div className="dossier-card-content">
+                    <p className="dossier-card-primary">
+                      {readingMinutes} {readingMinutes === 1 ? 'minute' : 'minutes'}
+                    </p>
+                  </div>
+                </div>
               )}
-            </section>
-          )}
+
+              {/* Table of Contents */}
+              {sections.length > 0 && (
+                <div className="dossier-card">
+                  <div className="dossier-card-header">
+                    <svg className="dossier-card-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="8" y1="6" x2="21" y2="6" />
+                      <line x1="8" y1="12" x2="21" y2="12" />
+                      <line x1="8" y1="18" x2="21" y2="18" />
+                      <line x1="3" y1="6" x2="3.01" y2="6" />
+                      <line x1="3" y1="12" x2="3.01" y2="12" />
+                      <line x1="3" y1="18" x2="3.01" y2="18" />
+                    </svg>
+                    <strong>Contents</strong>
+                  </div>
+                  <nav className="dossier-card-content dossier-toc-nav">
+                    {sections.map((section) => (
+                      <a key={section.id} href={`#${section.id}`} className="dossier-toc-link">
+                        {section.title}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              )}
+            </aside>
+
+            {/* Main Article */}
+            <article className="dossier-article">
+              {loading && <p className="dossier-loading">Loading report...</p>}
+              {loadError && <p className="dossier-error">{loadError}</p>}
+              {!loading && !loadError && markdown && (
+                <>
+                  {/* Summary Card */}
+                  {example.summary && (
+                    <div className="dossier-summary-card">
+                      <h3 className="dossier-summary-title">Overview</h3>
+                      <p className="dossier-summary-text">{example.summary}</p>
+                    </div>
+                  )}
+
+                  {/* Main Content */}
+                  <div className="dossier-prose">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h2: ({ node, ...props }) => {
+                          const text = String(props.children);
+                          const match = body.match(new RegExp(`^##\\s+${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+                          if (match) {
+                            const index = body.substring(0, match.index).split('\n').filter(l => l.match(/^##\s+/)).length;
+                            return <h2 id={`report-section-${index + 1}`} {...props} />;
+                          }
+                          return <h2 {...props} />;
+                        },
+                      }}
+                    >
+                      {body}
+                    </ReactMarkdown>
+                  </div>
+
+                  {/* Lesson Callout */}
+                  {example.lesson && (
+                    <div className="dossier-lesson-card">
+                      <div className="dossier-lesson-icon">💡</div>
+                      <div>
+                        <h3 className="dossier-lesson-label">Key Lesson</h3>
+                        <p className="dossier-lesson-text">{example.lesson}</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Image Gallery */}
+              {images.length > 0 && (
+                <section className="dossier-images-section">
+                  <h2 className="dossier-section-title">Project Images</h2>
+                  <div className="dossier-image-grid">
+                    {images.map((image, index) => (
+                      <button
+                        key={image.id}
+                        onClick={() => setSelectedImageIndex(index)}
+                        className="dossier-image-card"
+                        aria-label={`View image ${index + 1}: ${image.fileName}`}
+                      >
+                        <Image
+                          src={image.storageUrl}
+                          alt={image.fileName}
+                          fill
+                          className="dossier-image"
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                        />
+                        <div className="dossier-image-overlay" />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Sources Section */}
+              {sources.length > 0 && (
+                <section className="dossier-sources-section">
+                  <h2 className="dossier-section-title">Sources & References</h2>
+                  <div className="dossier-source-list">
+                    {sources.map((source, index) => (
+                      <SourceRow key={source.url} source={source} index={index} />
+                    ))}
+                  </div>
+                  {onArchiveSearch && (
+                    <button
+                      className="dossier-archive-button"
+                      onClick={onArchiveSearch}
+                    >
+                      Search archivi.ng for contemporary press
+                    </button>
+                  )}
+                </section>
+              )}
+            </article>
+          </div>
         </div>
 
         {/* Image Lightbox */}

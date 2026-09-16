@@ -6,12 +6,11 @@ export interface MapCameraTarget {
 }
 
 /**
- * The opening frame. A neutral Atlantic centre showed mostly ocean and left
- * two thirds of the atlas off screen, so the globe now opens over the
- * Atlantic rim, where the markers actually cluster: the Americas fall on the
- * left of the sphere and Europe on the right, both in view at once.
+ * The opening frame centered on Nigeria.
+ * Nigeria coordinates: [longitude, latitude] = [8.6753, 9.0820]
+ * This provides a focused view on Nigerian projects.
  */
-const atlasHome: [number, number] = [-38, 26];
+const atlasHome: [number, number] = [8.6753, 9.0820];
 
 export function getMapCameraTarget(
   focus: Location | null,
@@ -26,8 +25,8 @@ export function getMapCameraTarget(
         ? 4
         : 2.5
       : containerWidth < 640
-        ? 0.9
-        : 1.7,
+        ? 5
+        : 5.5,
   };
 }
 
@@ -43,25 +42,23 @@ export function sameMapCameraTarget(
 }
 
 /**
- * The idle drift. A still globe reads as a photograph of the earth rather
- * than the earth itself, so the atlas turns eastward on its own whenever
- * nobody is touching it.
+ * The idle drift. Slowed down significantly for Nigeria-focused view.
+ * A gentle rotation keeps the globe feeling dynamic without being distracting.
  */
-export const spinDegreesPerSecond = 2.6;
+export const spinDegreesPerSecond = 0.8;
 
 /** How long the globe waits after a touch before it drifts again. */
-export const spinResumeDelay = 2600;
+export const spinResumeDelay = 3000;
 
 /**
  * Degrees of longitude to give back for one animation frame. The drift eases
- * out as the reader zooms in, because the same angle sweeps the ground far
- * faster up close, and stops entirely once a country fills the screen. A long
- * frame gap - a stalled tab, a slow paint - is clamped so the globe resumes
- * where it left off instead of lurching.
+ * out as the reader zooms in, and stops at zoom level 5 (Nigeria country view).
+ * A long frame gap - a stalled tab, a slow paint - is clamped so the globe 
+ * resumes where it left off instead of lurching.
  */
 export function getGlobeSpinStep(zoom: number, elapsedMs: number): number {
-  if (zoom >= 4) return 0;
-  const easing = zoom <= 2 ? 1 : (4 - zoom) / 2;
+  if (zoom >= 5) return 0;
+  const easing = zoom <= 3 ? 1 : (5 - zoom) / 2;
   return (
     (spinDegreesPerSecond * easing * Math.min(Math.max(elapsedMs, 0), 100)) /
     1000
