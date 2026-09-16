@@ -58,7 +58,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${display.variable} ${mono.variable}`}>
         {children}
-        <Analytics />
+        <Analytics debug={false} />
       </body>
     </html>
   );

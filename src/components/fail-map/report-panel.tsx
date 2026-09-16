@@ -207,7 +207,10 @@ export function ReportPanel({
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="dossier-dialog" showCloseButton={false}>
+      <DialogContent className="dossier-dialog" showCloseButton={false} aria-describedby="project-details-description">
+        <span id="project-details-description" className="sr-only">
+          Detailed report for {title} including location, status, timeline, and full documentation.
+        </span>
         <header className="dossier-toolbar">
           <DialogClose className="dossier-back">
             <ArrowLeft size={17} />
