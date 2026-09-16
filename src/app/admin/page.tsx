@@ -84,6 +84,14 @@ export default function AdminDashboardPage() {
                   <div className="text-sm text-blue-700">Create, edit, and view all projects</div>
                 </Link>
                 
+                <Link
+                  href="/admin/submissions"
+                  className="block px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                >
+                  <div className="font-medium text-green-900">Review Submissions</div>
+                  <div className="text-sm text-green-700">Review and approve public project suggestions</div>
+                </Link>
+                
                 {session.role === 'super_admin' && (
                   <Link
                     href="/admin/admins"
@@ -98,11 +106,11 @@ export default function AdminDashboardPage() {
 
             <div className="border-t border-gray-200 pt-6 mt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Coming in Phase 5g+:
+                Coming Soon:
               </h3>
               <ul className="space-y-2 text-gray-600">
-                <li>• Review public submissions</li>
-                <li>• View project statistics and analytics</li>
+                <li>• Public submission form on main map</li>
+                <li>• Project statistics and analytics dashboard</li>
               </ul>
             </div>
           </div>
