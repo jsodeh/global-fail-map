@@ -16,7 +16,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed-admin": "dotenv -e .env.local -- tsx scripts/seed-admin.ts"
+    "db:seed-admin": "dotenv -e .env.local -- tsx scripts/seed-admin.ts",
+    "test:submissions": "dotenv -e .env.local -- tsx scripts/test-submissions.ts",
+    "check:submissions": "dotenv -e .env.local -- tsx scripts/check-submissions.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",

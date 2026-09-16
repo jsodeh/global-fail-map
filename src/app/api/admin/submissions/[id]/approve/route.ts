@@ -47,7 +47,7 @@ export async function POST(
       );
     }
 
-    // Create project from submission
+    // Create project from submission with required fields
     const [newProject] = await db
       .insert(projects)
       .values({
@@ -58,11 +58,11 @@ export async function POST(
         mda: projectData.mda,
         state: projectData.state || null,
         lga: projectData.lga || null,
-        sector: projectData.sector || null,
+        sector: projectData.sector || 'General', // Required field, default to 'General'
         status: projectData.status || 'planned',
-        lat: projectData.lat || null,
-        lng: projectData.lng || null,
-        locationName: projectData.locationName || null,
+        lat: projectData.lat || '9.0820', // Default to Nigeria center
+        lng: projectData.lng || '8.6753', // Default to Nigeria center
+        locationName: projectData.locationName || projectData.state || 'Nigeria', // Required field
         locationRole: projectData.locationRole || null,
         contractorName: projectData.contractorName || null,
         contractorRegInfo: projectData.contractorRegInfo || null,
