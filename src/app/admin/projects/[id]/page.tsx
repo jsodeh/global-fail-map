@@ -8,6 +8,7 @@ import { Project } from '@/lib/db/schema';
 import { ProjectBudgets } from '@/components/admin/project-budgets';
 import { ProjectStatusUpdates } from '@/components/admin/project-status-updates';
 import { ProjectSources } from '@/components/admin/project-sources';
+import { ProjectFiles } from '@/components/admin/project-files';
 
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -16,7 +17,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'details' | 'budgets' | 'status' | 'sources'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'budgets' | 'status' | 'sources' | 'files'>('details');
   const [formData, setFormData] = useState<Partial<Project>>({
     title: '',
     subtitle: '',
@@ -183,6 +184,16 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
               >
                 Sources
               </button>
+              <button
+                onClick={() => setActiveTab('files')}
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                  activeTab === 'files'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Files
+              </button>
             </div>
           )}
 
@@ -207,6 +218,10 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           ) : activeTab === 'sources' && resolvedParams.id !== 'new' ? (
             <div className="bg-white rounded-lg shadow p-6">
               <ProjectSources projectId={resolvedParams.id} />
+            </div>
+          ) : activeTab === 'files' && resolvedParams.id !== 'new' ? (
+            <div className="bg-white rounded-lg shadow p-6">
+              <ProjectFiles projectId={resolvedParams.id} />
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
