@@ -26,6 +26,7 @@ export default function SubmissionsPage() {
   const { session, isLoading: sessionLoading, fetchSession } = useAdminSession();
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]); // Store all for counts
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
@@ -63,6 +64,14 @@ export default function SubmissionsPage() {
   const loadSubmissions = async () => {
     try {
       setLoading(true);
+      
+      // Load all submissions for counts
+      const allResponse = await fetch('/api/admin/submissions?status=all');
+      if (!allResponse.ok) throw new Error('Failed to load submissions');
+      const allData = await allResponse.json();
+      setAllSubmissions(allData);
+      
+      // Load filtered submissions for display
       const response = await fetch(
         `/api/admin/submissions?status=${statusFilter}`,
       );
@@ -76,6 +85,14 @@ export default function SubmissionsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calculate counts from all submissions
+  const statusCounts = {
+    pending: allSubmissions.filter((s) => s.status === 'pending').length,
+    approved: allSubmissions.filter((s) => s.status === 'approved').length,
+    rejected: allSubmissions.filter((s) => s.status === 'rejected').length,
+    all: allSubmissions.length,
   };
 
   const handleApprove = async (e: React.FormEvent) => {
@@ -238,7 +255,7 @@ export default function SubmissionsPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Pending ({submissions.filter((s) => s.status === 'pending').length})
+                Pending ({statusCounts.pending})
               </button>
               <button
                 onClick={() => setStatusFilter('approved')}
@@ -248,7 +265,7 @@ export default function SubmissionsPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Approved
+                Approved ({statusCounts.approved})
               </button>
               <button
                 onClick={() => setStatusFilter('rejected')}
@@ -258,7 +275,7 @@ export default function SubmissionsPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Rejected
+                Rejected ({statusCounts.rejected})
               </button>
               <button
                 onClick={() => setStatusFilter('all')}
@@ -268,7 +285,7 @@ export default function SubmissionsPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                All
+                All ({statusCounts.all})
               </button>
             </div>
           </div>
