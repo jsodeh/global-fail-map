@@ -292,3 +292,89 @@ Consider implementing rate limiting for production:
 - Public API: 100 requests per minute per IP
 
 (Not currently implemented - add if needed)
+
+
+## Public Display Integration
+
+### Project Detail Modal Enhancement
+**Location:** `src/components/fail-map/report-panel.tsx`
+
+The ReportPanel component has been enhanced to automatically display project images when viewing database projects on the public map.
+
+**Features:**
+- **Auto-Detection**: Distinguishes between static examples and database projects
+- **Image Grid**: Displays images in 2-3 column responsive grid
+- **Positioned**: Images appear after report content, before sources section
+- **Lightbox Navigation**: Click any image to open full-screen viewer
+- **Arrow Controls**: Navigate between images with previous/next buttons
+- **Image Counter**: Shows current position (e.g., "Image 2 of 5")
+- **Optimized**: Uses Next.js Image component for performance
+
+**User Flow:**
+1. User clicks project marker on map
+2. Project detail modal opens
+3. Scroll past report content to see "Project Images (X)" section
+4. Click any thumbnail to open lightbox
+5. Use arrow buttons to navigate or X to close
+
+**Technical Details:**
+
+The component checks if a project is from the database (has UUID-style ID) and fetches images:
+
+```typescript
+useEffect(() => {
+  if (!example || !('id' in example && typeof example.id === 'string' && example.id.includes('-'))) {
+    setImages([]);
+    return;
+  }
+
+  fetch(`/api/projects/${example.id}/media`)
+    .then((response) => response.ok ? response.json() : [])
+    .then(setImages)
+    .catch(() => setImages([]));
+}, [example]);
+```
+
+**Lightbox Features:**
+- Full-screen overlay with semi-transparent black background
+- Prev/Next navigation buttons (hidden on first/last image)
+- Image filename and counter displayed at bottom
+- Click outside image or X button to close
+- Prevents propagation to avoid accidental closes
+
+### Styling Additions
+
+The image gallery integrates seamlessly with existing report styles:
+
+```css
+.dossier-images {
+  /* Styles added inline with Tailwind classes */
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+```
+
+Grid layout uses Tailwind:
+- Mobile: 2 columns
+- Tablet+: 3 columns
+- Hover effects: Border color changes
+- Aspect ratio: Square for consistent layout
+
+## Complete Flow: Upload to Public Display
+
+1. **Admin uploads images** → Media tab in project edit page
+2. **Images stored** → Vercel Blob storage
+3. **Metadata saved** → PostgreSQL database
+4. **Public access** → `/api/projects/[id]/media` endpoint
+5. **Map display** → ReportPanel fetches and shows images
+6. **User views** → Click to see full gallery with navigation
+
+## Next Steps for Phase 11
+
+Now that images are uploaded and displayed, you can:
+
+1. **Integrate database projects with map** - Show admin-created projects alongside static examples
+2. **Add filters to public map** - Filter by state, LGA, status, sector
+3. **Project search** - Allow users to search for specific projects
+4. **Featured images** - Set a primary image to show on map markers
+5. **Image captions** - Add descriptions to images for more context
