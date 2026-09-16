@@ -83,18 +83,25 @@ export default function AdminDashboardPage() {
                   <div className="font-medium text-blue-900">Manage Projects</div>
                   <div className="text-sm text-blue-700">Create, edit, and view all projects</div>
                 </Link>
+                
+                {session.role === 'super_admin' && (
+                  <Link
+                    href="/admin/admins"
+                    className="block px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                  >
+                    <div className="font-medium text-purple-900">Admin Management</div>
+                    <div className="text-sm text-purple-700">Create and manage admin accounts (Super Admin only)</div>
+                  </Link>
+                )}
               </div>
             </div>
 
             <div className="border-t border-gray-200 pt-6 mt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Coming in Phase 5b-5g:
+                Coming in Phase 5g+:
               </h3>
               <ul className="space-y-2 text-gray-600">
-                <li>• Manage budgets and status updates</li>
-                <li>• Upload source documents (PDFs, Excel)</li>
                 <li>• Review public submissions</li>
-                <li>• Create additional admin accounts (super admin only)</li>
                 <li>• View project statistics and analytics</li>
               </ul>
             </div>
