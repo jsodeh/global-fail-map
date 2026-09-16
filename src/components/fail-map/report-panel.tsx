@@ -3,12 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Image from 'next/image';
 import {
   ArrowDownToLine,
   ArrowLeft,
   Check,
   ExternalLink,
   Link2,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,6 +37,15 @@ interface ReportPanelProps {
   example: FailExample | null;
   onClose: () => void;
   onArchiveSearch?: () => void;
+}
+
+interface ProjectImage {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  storageUrl: string;
+  uploadedAt: string;
 }
 
 function SourceRow({ source, index }: { source: Source; index: number }) {
@@ -65,7 +78,25 @@ export function ReportPanel({
   const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(false);
   const [shareState, setShareState] = useState<'idle' | 'copied'>('idle');
+  const [images, setImages] = useState<ProjectImage[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load project images if this is a database project (has an id field)
+  useEffect(() => {
+    if (!example || !('id' in example && typeof example.id === 'string' && example.id.includes('-'))) {
+      setImages([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    fetch(`/api/projects/${example.id}/media`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : [])
+      .then(setImages)
+      .catch(() => setImages([]));
+
+    return () => controller.abort();
+  }, [example]);
 
   useEffect(() => {
     setMarkdown('');
@@ -237,6 +268,30 @@ export function ReportPanel({
             )}
           </article>
 
+          {images.length > 0 && (
+            <section className="dossier-images">
+              <h2>Project Images ({images.length})</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                {images.map((image, index) => (
+                  <button
+                    key={image.id}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer group"
+                  >
+                    <Image
+                      src={image.storageUrl}
+                      alt={image.fileName}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
           {sources.length > 0 && (
             <section className="dossier-sources">
               <h2>Sources</h2>
@@ -256,6 +311,68 @@ export function ReportPanel({
             </section>
           )}
         </div>
+
+        {/* Image Lightbox */}
+        {selectedImageIndex !== null && images[selectedImageIndex] && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90"
+            onClick={() => setSelectedImageIndex(null)}
+          >
+            <button
+              onClick={() => setSelectedImageIndex(null)}
+              className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-10"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {selectedImageIndex > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImageIndex(selectedImageIndex - 1);
+                }}
+                className="absolute left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-10"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+
+            {selectedImageIndex < images.length - 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImageIndex(selectedImageIndex + 1);
+                }}
+                className="absolute right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-10"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+
+            <div className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center px-16">
+              <Image
+                src={images[selectedImageIndex].storageUrl}
+                alt={images[selectedImageIndex].fileName}
+                fill
+                className="object-contain"
+                sizes="90vw"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            <div className="absolute bottom-4 left-4 right-4 text-center z-10">
+              <div className="inline-block bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2">
+                <p className="text-white font-medium">{images[selectedImageIndex].fileName}</p>
+                <p className="text-sm text-gray-300">
+                  Image {selectedImageIndex + 1} of {images.length}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
