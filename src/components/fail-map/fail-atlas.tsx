@@ -66,8 +66,53 @@ export function FailAtlas({ examples }: { examples: FailExample[] }) {
   const headingDockedRef = useRef(false);
   const [highlightId, setHighlightId] = useState<string | undefined>();
   const [mapless, setMapless] = useState(false);
+  const [dbProjects, setDbProjects] = useState<FailExample[]>([]);
   const reportOpen = !!selectedExample;
   const inviteHidden = headingDocked || reportOpen || explorerOpen || mapless;
+
+  // Fetch database projects and merge with static examples
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/projects', { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : { projects: [] })
+      .then((data) => {
+        const projects = (data.projects || []).map((project: any): FailExample => ({
+          id: project.id,
+          title: project.title,
+          subtitle: project.subtitle || '',
+          location: project.state || project.locationName,
+          country: 'Nigeria',
+          lat: parseFloat(project.lat),
+          lng: parseFloat(project.lng),
+          category: 'infrastructure' as const,
+          status: project.status.charAt(0).toUpperCase() + project.status.slice(1),
+          statusDate: project.updatedAt,
+          period: project.startDate && project.expectedCompletion
+            ? `${new Date(project.startDate).getFullYear()}–${new Date(project.expectedCompletion).getFullYear()}`
+            : project.startDate
+            ? `${new Date(project.startDate).getFullYear()}–present`
+            : 'Date unknown',
+          year: project.startDate 
+            ? new Date(project.startDate).getFullYear() 
+            : new Date(project.createdAt).getFullYear(),
+          summary: project.reportContent
+            ? project.reportContent.substring(0, 200).trim() + '...'
+            : `${project.tier} project managed by ${project.mda}`,
+          lesson: '',
+          locationRole: project.locationRole || 'Project site',
+          confidence: project.confidence || 'moderate',
+          reportPath: '', // Database projects don't use file paths
+          sources: [],
+        }));
+        setDbProjects(projects);
+      })
+      .catch(() => setDbProjects([]));
+    
+    return () => controller.abort();
+  }, []);
+
+  // Merge static examples with database projects
+  const allExamples = useMemo(() => [...examples, ...dbProjects], [examples, dbProjects]);
 
   /**
    * On desktop the marker key is a permanent part of the atlas. On phones it
@@ -96,21 +141,21 @@ export function FailAtlas({ examples }: { examples: FailExample[] }) {
 
   const filteredExamples = useMemo(
     () =>
-      examples.filter(
+      allExamples.filter(
         (example) =>
           (category === 'all' || example.category === category) &&
           `${example.title} ${example.subtitle} ${example.location} ${example.country} ${example.summary}`
             .toLowerCase()
             .includes(query.toLowerCase().trim()),
       ),
-    [category, examples, query],
+    [category, allExamples, query],
   );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const caseId = params.get('case');
     if (caseId) {
-      const example = examples.find((item) => item.id === caseId);
+      const example = allExamples.find((item) => item.id === caseId);
       if (example) {
         setSelectedExample(example);
         setFocus({
@@ -121,7 +166,7 @@ export function FailAtlas({ examples }: { examples: FailExample[] }) {
         setExplorerOpen(false);
       }
     }
-  }, [examples]);
+  }, [allExamples]);
 
   /**
    * The Mapbox geocoding endpoint completes the place-search box. It surfaces

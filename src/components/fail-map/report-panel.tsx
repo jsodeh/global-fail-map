@@ -104,24 +104,55 @@ export function ReportPanel({
     setLoading(false);
     scrollRef.current?.scrollTo({ top: 0 });
     if (!example) return;
-    const controller = new AbortController();
-    setLoading(true);
-    fetch(example.reportPath, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok)
-          throw new Error(
-            'The report could not be loaded. Please try opening it again.',
-          );
-        return response.text();
-      })
-      .then(setMarkdown)
-      .catch((error: Error) => {
-        if (error.name !== 'AbortError') setLoadError(error.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
+
+    // Check if this is a database project (has UUID-style ID)
+    const isDatabaseProject = example.id.includes('-');
+    
+    if (isDatabaseProject) {
+      // For database projects, fetch the full project data to get reportContent
+      setLoading(true);
+      const controller = new AbortController();
+      fetch(`/api/projects?search=${encodeURIComponent(example.id)}`, { signal: controller.signal })
+        .then((response) => response.ok ? response.json() : { projects: [] })
+        .then((data) => {
+          const project = data.projects?.[0];
+          if (project?.reportContent) {
+            setMarkdown(project.reportContent);
+          } else {
+            // Generate basic content from project data
+            setMarkdown(`## Project Details\n\n${example.summary || 'No description available.'}`);
+          }
+        })
+        .catch((error: Error) => {
+          if (error.name !== 'AbortError') {
+            setLoadError('Failed to load project details');
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+      return () => controller.abort();
+    } else {
+      // For static examples, load from file as before
+      const controller = new AbortController();
+      setLoading(true);
+      fetch(example.reportPath, { signal: controller.signal })
+        .then((response) => {
+          if (!response.ok)
+            throw new Error(
+              'The report could not be loaded. Please try opening it again.',
+            );
+          return response.text();
+        })
+        .then(setMarkdown)
+        .catch((error: Error) => {
+          if (error.name !== 'AbortError') setLoadError(error.message);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+      return () => controller.abort();
+    }
   }, [example]);
 
   if (!example) return null;
