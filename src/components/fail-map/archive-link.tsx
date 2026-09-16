@@ -25,7 +25,7 @@ export function ArchiveLink({
   year,
 }: ArchiveLinkProps) {
   const years = archiveYears(period, year);
-  const url = archiveSearchUrl({ subject, category, years });
+  const url = archiveSearchUrl({ subject, location: subject, category, years });
   if (!url) return null;
   const label = archiveYearLabel(years);
 

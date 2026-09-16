@@ -1,6 +1,6 @@
 # Contributing
 
-Global Fail Map is an atlas of attempts worth understanding. Help make it a better place to learn from them.
+Progress Map is an atlas of Nigeria government projects tracking their progress from planning to completion. Help make it a better place to understand public project outcomes.
 
 ## Run the app
 
@@ -34,4 +34,4 @@ For corrections, identify the claim, explain the issue, and link the evidence. A
 
 Include the browser, screen size, steps to reproduce, and expected behavior. For research failures, include the visible error and approximate time. Never include cookies, bearer tokens, OAuth codes, API keys, or environment files.
 
-Report security issues privately to contact@valyu.ai.
+Report security issues privately to the maintainer.

@@ -1,19 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { BookOpen, History, Info, LogIn, LogOut, Shuffle } from 'lucide-react';
+import { BookOpen, Info, Shuffle } from 'lucide-react';
 
-interface AtlasDockProps {
+export interface AtlasDockProps {
   onHome: () => void;
   onStories: () => void;
-  onHistory: () => void;
   onAbout: () => void;
   onRandom?: () => void;
-  onConnect: () => void;
-  onDisconnect: () => void;
-  signedIn: boolean;
-  selfHosted: boolean;
-  connecting: boolean;
+  keyOpen?: boolean;
 }
 
 export function AtlasDock(props: AtlasDockProps) {
@@ -27,51 +22,29 @@ export function AtlasDock(props: AtlasDockProps) {
       <button
         className="dock-item"
         onClick={props.onStories}
-        aria-label="Browse stories"
+        aria-label="Browse projects"
       >
         <BookOpen size={21} />
-        <span className="dock-tooltip">Stories</span>
-      </button>
-      <button
-        className="dock-item"
-        onClick={props.onHistory}
-        aria-label="My research"
-      >
-        <History size={21} />
-        <span className="dock-tooltip">My research</span>
-      </button>
-      <span className="dock-divider" />
-      <button
-        className="dock-item"
-        onClick={props.onAbout}
-        aria-label="About this atlas"
-      >
-        <Info size={21} />
-        <span className="dock-tooltip">About</span>
+        <span className="dock-tooltip">Projects</span>
       </button>
       {props.onRandom && (
         <button
           className="dock-item is-random"
           onClick={props.onRandom}
-          aria-label="Open a random story"
+          aria-label="Random project"
         >
           <Shuffle size={21} />
-          <span className="dock-tooltip">Random story</span>
+          <span className="dock-tooltip">Random</span>
         </button>
       )}
-      {!props.selfHosted && (
-        <button
-          className="dock-item"
-          onClick={props.signedIn ? props.onDisconnect : props.onConnect}
-          disabled={props.connecting}
-          aria-label={props.signedIn ? 'Sign out' : 'Connect Valyu'}
-        >
-          {props.signedIn ? <LogOut size={21} /> : <LogIn size={21} />}
-          <span className="dock-tooltip">
-            {props.signedIn ? 'Sign out' : 'Connect Valyu'}
-          </span>
-        </button>
-      )}
+      <button
+        className="dock-item"
+        onClick={props.onAbout}
+        aria-label="About"
+      >
+        <Info size={21} />
+        <span className="dock-tooltip">About</span>
+      </button>
     </nav>
   );
 }

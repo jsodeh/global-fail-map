@@ -1,35 +1,35 @@
-# Global Fail Map
+# Progress Map
 
-An interactive atlas of failed companies, cancelled megaprojects, abandoned inventions, terminated experiments, and futures that never arrived. Global Fail Map turns researched failure into a browsable world map: every marker opens a sourced story about what people tried to build, why it ended, what survived, and what the next builder can learn.
+An interactive atlas of Nigeria government projects tracking their progress from planning to completion. Progress Map provides a browsable map of federal, state, and LGA projects: every marker opens a detailed report about project status, budget utilization, implementation timeline, and progress updates with sourced evidence.
 
-![](public/global-fail-map.png)
+![](public/progress-map.png)
 
-Explore 200 curated stories about what was attempted, where it happened, and what survived after it ended.
+Explore 200 curated project reports tracking Nigeria government initiatives from federal to local levels.
 
 <p align="center">
-  <img src="public/report-kandahar.png" width="32%" alt="Kandahar Diesel Generators report" />
-  <img src="public/report-kalimantan.png" width="32%" alt="Central Kalimantan peatland project report" />
-  <img src="public/report-theranos.png" width="32%" alt="Theranos report" />
+  <img src="public/report-kandahar.png" width="32%" alt="Sample project report" />
+  <img src="public/report-kalimantan.png" width="32%" alt="Sample project report" />
+  <img src="public/report-theranos.png" width="32%" alt="Sample project report" />
 </p>
 
-Global Fail Map is part graveyard, part research tool, and part strategy reference. It maps the evidence left behind by ambition: empty terminals, dissolved companies, shelved reactors, withdrawn drugs, ghost infrastructure, dead platforms, and plans that were too early, too expensive, too political, or simply wrong.
+Progress Map is a transparency and accountability tool. It tracks the lifecycle of government projects across Nigeria: planned, ongoing, completed, stalled, and abandoned initiatives with budget data, contractor information, and timeline tracking.
 
 ## Features
 
 ### Interactive Atlas
 
-- **Globe-first map** - Explore failure across continents through a Mapbox globe with custom category symbols.
-- **200 bundled stories** - Browse a curated atlas of documented attempts across infrastructure, companies, science, technology, and speculative visions.
-- **Dense-marker handling** - Nearby stories group cleanly without losing individual reports.
-- **Random discovery** - Jump to a random story when you want serendipity instead of search.
-- **Responsive reading** - Open long-form reports without leaving the map context.
+- **Globe-first map** - Explore Nigeria government projects through a Mapbox globe with custom sector symbols.
+- **200 bundled projects** - Browse a curated atlas of documented projects across infrastructure, health, education, power, water, and more.
+- **Dense-marker handling** - Nearby projects group cleanly without losing individual reports.
+- **Random discovery** - Jump to a random project when you want serendipity instead of search.
+- **Responsive reading** - Open detailed reports without leaving the map context.
 
-### Researched Failure Reports
+### Project Reports
 
-- **Cited Markdown reports** - Every bundled story links to a source-backed report under `public/reports`.
-- **Clear failure anatomy** - Reports separate the plan, location, timeline, ending, uncertainty, and afterlife.
+- **Cited Markdown reports** - Every bundled project links to a source-backed report under `public/reports`.
+- **Clear project anatomy** - Reports show status, budget, timeline, contractor information, and progress updates.
 - **Numbered citation integrity** - Cached reports keep numbered citations aligned with the source list in `src/data/examples.json`.
-- **Source metadata** - Each atlas entry preserves source URLs, research mode, task ID, confidence, coordinates, category, period, and status.
+- **Source metadata** - Each atlas entry preserves source URLs, confidence, coordinates, tier (federal/state/LGA), sector, and status.
 
 ### Live Deep Research
 
@@ -55,18 +55,18 @@ Global Fail Map is part graveyard, part research tool, and part strategy referen
 
 ## Why This Exists
 
-Success stories compress history into inevitability. Failure keeps the forks visible.
+Government project transparency drives accountability and learning.
 
-Fordlandia, the N-1 lunar rocket, the Superconducting Super Collider, Project Cybersyn, Monju, Concorde, Renren, Juicero, Biosphere 2, Byju's, the Hopewell Project, and the Ryugyong Hotel did not simply vanish. They left behind infrastructure, court rulings, technical knowledge, market warnings, successor institutions, scar tissue, and sometimes better versions built by someone else.
+Progress Map treats project tracking as essential public infrastructure. Each report asks:
 
-Global Fail Map treats failure as evidence, not trivia. Each story asks:
-
-- What was actually attempted?
-- Why did it matter at the time?
-- Where did it physically, legally, or institutionally happen?
-- What broke: financing, demand, politics, safety, execution, timing, or trust?
-- What survived after the project, product, company, or experiment ended?
-- What should a future builder learn before trying again?
+- What project was planned or implemented?
+- Which ministry, department, or agency is responsible?
+- Where is it located (state, LGA)?
+- What is the budget breakdown (appropriated, released, spent)?
+- Who is the contractor?
+- What is the current status and timeline?
+- What evidence supports these claims?
+- What can citizens and future projects learn?
 
 ## Tech Stack
 
@@ -94,7 +94,7 @@ Global Fail Map treats failure as evidence, not trivia. Each story asks:
 1. Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/yorkeccak/global-fail-map.git
+git clone https://github.com/jsodeh/global-fail-map.git
 cd global-fail-map
 pnpm install
 ```
@@ -154,11 +154,12 @@ Allow `https://your-app.example/auth/valyu/callback` in the OAuth client.
 
 ## Using The Atlas
 
-### Browse Bundled Stories
+### Browse Projects
 
-- Click any marker to open the story panel.
-- Use filters to focus on companies, infrastructure, science, technology, or visions.
-- Use random story mode to jump through the archive.
+- Click any marker to open the project panel.
+- Use filters to focus on federal, state, or LGA projects.
+- Filter by sector, status, or tier.
+- Use random project mode to jump through the archive.
 - Open the full report to inspect citations and source links.
 
 ### Research A New Subject
@@ -205,12 +206,12 @@ The merge step protects the published atlas from duplicate IDs, repeated subtitl
 ## Project Structure
 
 ```text
-global-fail-map/
+progress-map/
 ├── public/
-│   ├── global-fail-map.png        # README screenshot
+│   ├── progress-map.png           # README screenshot
 │   └── reports/                   # Cached Markdown reports
 ├── scripts/
-│   ├── curated/                   # Regional curated story batches
+│   ├── curated/                   # Regional curated project batches
 │   ├── build-entries.ts           # Generates draft entries and reports
 │   ├── check-curated.ts           # Validates one curated batch
 │   ├── merge-entries.ts           # Publishes generated entries to the atlas

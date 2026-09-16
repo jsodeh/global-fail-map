@@ -90,7 +90,7 @@ function webLinks(text: string): ReportLink[] {
 function entrySources(entry: string, links: ReportLink[]): Source[] {
   let label = entry;
   for (const link of [...links].reverse()) {
-    const title = /^\[?\d+\]?$/.test(link.title) ? '' : link.title;
+    const title = /^\[?\d+\]?$/.test(link.title || '') ? '' : link.title || '';
     label = label.slice(0, link.start) + title + label.slice(link.end);
   }
   label = markdownText(label)
@@ -123,10 +123,10 @@ function bibliographySources(bibliography: string) {
       }
       const title = definition.match(/\s["']([^\n]+)["']\s*$/)?.[1];
       extracted.push({
-        url: links[0].url,
+        url: links[0]?.url || '',
         title:
           title ||
-          (/^\d+$/.test(reference) ? sourceHostname(links[0].url) : reference),
+          (/^\d+$/.test(reference) ? sourceHostname(links[0]?.url || '') : reference),
       });
       definitions.push(definition);
       return '';
@@ -254,5 +254,5 @@ export function reportMarkdown(title: string, body: string, sources: Source[]) {
   const sourceLinks = links.length
     ? `\n\n## Source links\n\n${links.join('\n')}`
     : '';
-  return `# ${title}\n\n${body}${sourceLinks}\n\n---\nGlobal Fail Map · Research by Valyu\n`;
+  return `# ${title}\n\n${body}${sourceLinks}\n\n---\nProgress Map\n`;
 }

@@ -1,15 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
-import { AuthInitializer } from '@/components/auth/auth-initializer';
 import './globals.css';
 
 const display = Geist({ variable: '--font-display', subsets: ['latin'] });
 const mono = Geist_Mono({ variable: '--font-mono', subsets: ['latin'] });
 const baseUrl =
-  process.env.NEXT_PUBLIC_APP_URL || 'https://global-fail-map.vercel.app';
+  process.env.NEXT_PUBLIC_APP_URL || 'https://progress-map.vercel.app';
 const description =
-  'A graveyard of failed companies, cancelled megaprojects, dead science and abandoned futures. Search the world map to discover what happened, why it ended and the evidence behind the story.';
+  'Track Nigeria government projects from planning to completion. Search federal, state, and LGA projects to discover their status, budget utilization, and progress updates.';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -21,17 +20,17 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'Global Fail Map',
-    template: '%s | Global Fail Map',
+    default: 'Progress Map',
+    template: '%s | Progress Map',
   },
   description,
-  applicationName: 'Global Fail Map',
-  authors: [{ name: 'Valyu', url: 'https://valyu.ai' }],
+  applicationName: 'Progress Map',
+  authors: [{ name: 'Nigeria Government', url: baseUrl }],
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'Global Fail Map',
+    title: 'Progress Map',
     description,
-    siteName: 'Global Fail Map',
+    siteName: 'Progress Map',
     type: 'website',
     url: baseUrl,
     locale: 'en_US',
@@ -39,7 +38,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Global Fail Map',
+    title: 'Progress Map',
     description,
   },
   icons: {
@@ -58,7 +57,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${display.variable} ${mono.variable}`}>
-        <AuthInitializer>{children}</AuthInitializer>
+        {children}
         <Analytics />
       </body>
     </html>

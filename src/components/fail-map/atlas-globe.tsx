@@ -16,9 +16,16 @@ import {
 import {
   categories,
   type FailExample,
-  type Investigation,
   type Location,
 } from './types';
+
+// Minimal Investigation type for props (no longer used in this simplified version)
+interface Investigation {
+  id: string;
+  location: Location;
+  category: string;
+}
+
 import { MarkerSymbol } from './marker-symbol';
 import { createClusterSymbol, createMapSymbol } from './map-symbols';
 import { groupMapExamples } from './map-groups';
@@ -388,7 +395,7 @@ export function AtlasGlobe(props: AtlasGlobeProps) {
       );
       const dot = document.createElement('span');
       dot.className = 'atlas-pin-dot';
-      dot.appendChild(createMapSymbol('', investigation.category));
+      dot.appendChild(createMapSymbol('', investigation.category as any));
       button.appendChild(dot);
       button.addEventListener('click', (event) => {
         event.stopPropagation();

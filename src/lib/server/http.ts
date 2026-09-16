@@ -10,10 +10,6 @@ export class RequestError extends Error {
   }
 }
 
-export function isHosted(): boolean {
-  return process.env.NEXT_PUBLIC_APP_MODE === 'valyu';
-}
-
 export function appOrigin(request: Request): string {
   return new URL(process.env.NEXT_PUBLIC_APP_URL || request.url).origin;
 }

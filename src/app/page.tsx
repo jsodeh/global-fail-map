@@ -3,10 +3,5 @@ import examples from '@/data/examples.json';
 import type { FailExample } from '@/components/fail-map/types';
 
 export default function Home() {
-  return (
-    <FailAtlas
-      examples={examples as FailExample[]}
-      selfHostedNotifications={Boolean(process.env.DEEPRESEARCH_ALERT_EMAIL)}
-    />
-  );
+  return <FailAtlas examples={examples as FailExample[]} />;
 }

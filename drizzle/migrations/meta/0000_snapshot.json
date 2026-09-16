@@ -1,0 +1,22 @@
+{
+  "id": "0000_initial_schema",
+  "prevId": "",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "admins": {},
+    "projects": {},
+    "project_budgets": {},
+    "status_updates": {},
+    "project_sources": {},
+    "uploaded_files": {},
+    "pending_submissions": {}
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

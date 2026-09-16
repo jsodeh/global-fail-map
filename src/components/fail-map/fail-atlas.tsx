@@ -1,16 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowRight,
   ArrowUpRight,
   ChevronRight,
   Globe2,
   Github,
-  Loader2,
   MapPin,
   Newspaper,
   Search,
@@ -24,19 +21,14 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useAuthStore } from '@/lib/stores/use-auth-store';
-import { useSignupGate } from '@/lib/stores/use-signup-gate';
 import { archiveSearchUrl, isNigerianLocation } from '@/lib/archiving';
 import { ReportPanel } from './report-panel';
-import { SignupGateDialog } from './signup-gate-dialog';
-import { ResearchOptions } from './research-options';
 import { AtlasDock } from './atlas-dock';
 import { AtlasLegend } from './atlas-legend';
 import {
   categories,
   type Category,
   type FailExample,
-  type Investigation,
   type Location,
 } from './types';
 
@@ -44,8 +36,6 @@ const AtlasGlobe = dynamic(
   () => import('./atlas-globe').then((module) => module.AtlasGlobe),
   { ssr: false },
 );
-const isSelfHosted = process.env.NEXT_PUBLIC_APP_MODE !== 'valyu';
-const draftKey = 'global-fail-map-research-draft';
 
 interface PlaceResult {
   id: string;
@@ -53,50 +43,9 @@ interface PlaceResult {
   center: [number, number];
 }
 
-export function FailAtlas({
-  examples,
-  selfHostedNotifications = false,
-}: {
-  examples: FailExample[];
-  selfHostedNotifications?: boolean;
-}) {
-  const {
-    user,
-    signInWithValyu,
-    signOut,
-    loading: authLoading,
-  } = useAuthStore();
-  const signedIn = !!user;
-  const {
-    trigger: gateTrigger,
-    hydrate: hydrateGate,
-    gateRandom,
-    gateStory,
-    gateResearch,
-    dismiss: dismissGate,
-    reset: resetGate,
-  } = useSignupGate();
-  /*
-   * A self-hosted atlas has no account to sell, and a reader who already has
-   * one has bought. Everyone else is counted.
-   */
-  const gateApplies = !isSelfHosted && !signedIn;
-  /*
-   * Counting starts immediately, but the ask waits until the session request
-   * has answered. Otherwise a slow session lookup either lets a whole visit
-   * through untallied or greets a signed-in reader with a sign-up wall.
-   */
-  const gateEnforced = gateApplies && !authLoading;
+export function FailAtlas({ examples }: { examples: FailExample[] }) {
   const searchInput = useRef<HTMLInputElement>(null);
-  /** The place behind a gated research click, kept for the sign-up round trip. */
-  const gatedLocation = useRef<Location | null>(null);
   const focusSearchOnOpen = useRef(false);
-  const reportRequest = useRef<AbortController | null>(null);
-  const reportUrl = useRef('');
-  const updateReportUrl = useCallback((url: string) => {
-    window.history.replaceState({}, '', url);
-    reportUrl.current = window.location.pathname + window.location.search;
-  }, []);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('all');
   const [places, setPlaces] = useState<PlaceResult[]>([]);
@@ -104,34 +53,9 @@ export function FailAtlas({
   const [selectedExample, setSelectedExample] = useState<FailExample | null>(
     null,
   );
-  const [investigations, setInvestigations] = useState<Investigation[]>([]);
-  const [activeInvestigation, setActiveInvestigation] =
-    useState<Investigation | null>(null);
-  const [showInvestigation, setShowInvestigation] = useState(false);
-  const [publicReport, setPublicReport] = useState(false);
-  const [reportLinkState, setReportLinkState] = useState<
-    'idle' | 'loading' | 'signin' | 'error'
-  >('idle');
-  const [reportLinkError, setReportLinkError] = useState('');
-  const [researchConnection, setResearchConnection] = useState<
-    'connecting' | 'live' | 'reconnecting'
-  >('connecting');
   const [focus, setFocus] = useState<Location | null>(null);
-  const [pendingLocation, setPendingLocation] = useState<Location | null>(null);
-  const [instructions, setInstructions] = useState('');
-  const [researchCategory, setResearchCategory] = useState<Category>('all');
-  const [researchMode, setResearchMode] = useState<
-    'fast' | 'standard' | 'heavy'
-  >('fast');
-  const notificationAvailable = isSelfHosted
-    ? selfHostedNotifications
-    : Boolean(user?.email);
-  const [submitting, setSubmitting] = useState(false);
-  const [composerError, setComposerError] = useState('');
-  const [activeTab, setActiveTab] = useState<'atlas' | 'history'>('atlas');
   const [aboutOpen, setAboutOpen] = useState(false);
   const [notice, setNotice] = useState('');
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const isMobileViewport = useRef(false);
@@ -139,26 +63,8 @@ export function FailAtlas({
   const headingDockedRef = useRef(false);
   const [highlightId, setHighlightId] = useState<string | undefined>();
   const [mapless, setMapless] = useState(false);
-  const reportOpen =
-    !!selectedExample || (showInvestigation && !!activeInvestigation);
-  /*
-   * The nudge is for a reader who has not started yet, and nobody else. The
-   * marker key lives on the right of the screen, so it does not collide with
-   * the invite.
-   */
+  const reportOpen = !!selectedExample;
   const inviteHidden = headingDocked || reportOpen || explorerOpen || mapless;
-
-  useEffect(() => {
-    hydrateGate();
-  }, [hydrateGate]);
-
-  /*
-   * Signing in settles the account question, so the tally is thrown away
-   * rather than left to fire at a reader who has already signed up.
-   */
-  useEffect(() => {
-    if (signedIn) resetGate();
-  }, [signedIn, resetGate]);
 
   /**
    * On desktop the marker key is a permanent part of the atlas. On phones it
@@ -180,7 +86,6 @@ export function FailAtlas({
     focusSearchOnOpen.current = true;
     if (isMobileViewport.current) setLegendOpen(false);
     setExplorerOpen(true);
-    setActiveTab('atlas');
     requestAnimationFrame(() =>
       searchInput.current?.focus({ preventScroll: true }),
     );
@@ -198,123 +103,10 @@ export function FailAtlas({
     [category, examples, query],
   );
 
-  const loadInvestigations = useCallback(async () => {
-    if (!signedIn && !isSelfHosted) return;
-    setHistoryLoading(true);
-    try {
-      const response = await fetch('/api/investigations');
-      if (!response.ok)
-        throw new Error('Your research history could not be loaded.');
-      const data = await response.json();
-      setInvestigations(data.investigations || []);
-    } catch (error) {
-      setNotice(
-        error instanceof Error
-          ? error.message
-          : 'Could not load your research.',
-      );
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [signedIn]);
-
   useEffect(() => {
-    void loadInvestigations();
-  }, [loadInvestigations]);
-
-  useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (
-        event.key === '/' &&
-        !(event.target instanceof HTMLInputElement) &&
-        !(event.target instanceof HTMLTextAreaElement) &&
-        !(
-          event.target instanceof Element &&
-          event.target.closest('[role="dialog"]')
-        )
-      ) {
-        event.preventDefault();
-        openSearch();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [openSearch]);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timeout = window.setTimeout(() => setNotice(''), 6500);
-    return () => window.clearTimeout(timeout);
-  }, [notice]);
-
-  useEffect(() => {
-    const handleUrl = async () => {
-      reportUrl.current = window.location.pathname + window.location.search;
-      reportRequest.current?.abort();
-      const controller = new AbortController();
-      reportRequest.current = controller;
-      const params = new URLSearchParams(window.location.search);
-      try {
-        const resume = sessionStorage.getItem('global-fail-map-resume');
-        if (
-          resume &&
-          !params.has('research') &&
-          !params.has('case') &&
-          !params.has('share')
-        ) {
-          params.set('research', resume);
-          updateReportUrl(`/?${params.toString()}`);
-        }
-        sessionStorage.removeItem('global-fail-map-resume');
-      } catch {
-        /* The original report link remains usable without storage. */
-      }
-      const researchId = params.get('research');
-      const shareId = params.get('share');
-      setReportLinkState('idle');
-      if (researchId || shareId) {
-        setPublicReport(Boolean(shareId));
-        setSelectedExample(null);
-        setShowInvestigation(false);
-        if (!shareId && authLoading && !isSelfHosted) return;
-        if (!shareId && !signedIn && !isSelfHosted) {
-          setReportLinkState('signin');
-          return;
-        }
-        setReportLinkState('loading');
-        try {
-          const response = await fetch(
-            shareId
-              ? `/api/investigations/public/${encodeURIComponent(shareId)}`
-              : `/api/investigations/${encodeURIComponent(researchId!)}`,
-            { signal: controller.signal },
-          );
-          const data = await response.json();
-          if (!response.ok)
-            throw new Error(
-              data.message || 'This report is unavailable or no longer shared.',
-            );
-          if (controller.signal.aborted) return;
-          setActiveInvestigation(data.investigation);
-          setPublicReport(!!shareId);
-          setShowInvestigation(true);
-          setFocus(data.investigation.location);
-          setExplorerOpen(false);
-          setReportLinkState('idle');
-        } catch (error) {
-          if (controller.signal.aborted) return;
-          setReportLinkError(
-            error instanceof Error
-              ? error.message
-              : 'Could not open this report.',
-          );
-          setReportLinkState('error');
-        }
-        return;
-      }
-      setShowInvestigation(false);
-      setPublicReport(false);
-      const caseId = params.get('case');
+    const params = new URLSearchParams(window.location.search);
+    const caseId = params.get('case');
+    if (caseId) {
       const example = examples.find((item) => item.id === caseId);
       if (example) {
         setSelectedExample(example);
@@ -323,435 +115,122 @@ export function FailAtlas({
           latitude: example.lat,
           longitude: example.lng,
         });
-      } else {
-        setSelectedExample(null);
-        setFocus(null);
+        setExplorerOpen(false);
       }
-      if (params.has('auth_error'))
-        setNotice(
-          params.get('auth_error') ||
-            'Sign-in did not finish. Please try connecting again.',
-        );
-    };
-    handleUrl();
-    const handleNavigation = () => {
-      if (
-        reportUrl.current !==
-        window.location.pathname + window.location.search
-      )
-        void handleUrl();
-    };
-    window.addEventListener('popstate', handleNavigation);
-    return () => {
-      reportRequest.current?.abort();
-      window.removeEventListener('popstate', handleNavigation);
-    };
-  }, [examples, signedIn, authLoading, updateReportUrl]);
-
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(draftKey);
-      if (saved) {
-        const draft = JSON.parse(saved);
-        if (
-          draft.location &&
-          typeof draft.location.name === 'string' &&
-          Number.isFinite(draft.location.latitude) &&
-          Number.isFinite(draft.location.longitude)
-        ) {
-          setPendingLocation(draft.location);
-          setInstructions(
-            typeof draft.instructions === 'string' ? draft.instructions : '',
-          );
-          if (['fast', 'standard', 'heavy'].includes(draft.mode))
-            setResearchMode(draft.mode);
-          setResearchCategory(
-            categories.some((item) => item.id === draft.category)
-              ? draft.category
-              : 'all',
-          );
-        }
-        sessionStorage.removeItem(draftKey);
-      }
-    } catch {
-      /* A fresh draft works when session storage is unavailable. */
     }
-  }, []);
+  }, [examples]);
 
+  /**
+   * The Mapbox geocoding endpoint completes the place-search box. It surfaces
+   * the worldwide city list or national admin divisions instead of asking
+   * users to remember coordinates.
+   */
   useEffect(() => {
-    const search = query.trim();
-    const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
-    if (search.length < 3 || !token) {
+    const controller = new AbortController();
+    if (!query.trim()) {
       setPlaces([]);
       setSearching(false);
       return;
     }
-    const controller = new AbortController();
-    setPlaces([]);
-    const timeout = window.setTimeout(async () => {
-      setSearching(true);
+    setSearching(true);
+    void (async () => {
       try {
+        const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+        if (!token) return;
         const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(search)}.json?types=country,region,place,locality&limit=3&access_token=${token}`,
+          `https://api.mapbox.com/search/geocode/v6/forward?${new URLSearchParams({
+            q: query,
+            access_token: token,
+            types: 'country,region,district,place',
+            limit: '5',
+          })}`,
           { signal: controller.signal },
         );
-        if (response.ok) {
-          const data = await response.json();
-          if (!controller.signal.aborted) setPlaces(data.features || []);
-        }
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (controller.signal.aborted) return;
+        const results = Array.isArray(data.features) ? data.features : [];
+        setPlaces(
+          results.map((item: any) => ({
+            id: item.id || '',
+            place_name: item.properties?.full_address || 'Unknown location',
+            center:
+              Array.isArray(item.geometry?.coordinates) &&
+              item.geometry.coordinates.length === 2
+                ? ([item.geometry.coordinates[0], item.geometry.coordinates[1]] as [
+                    number,
+                    number,
+                  ])
+                : [0, 0],
+          })),
+        );
       } catch {
-        /* Curated reports and worldwide research stay available. */
+        /* Curated reports stay available. */
       } finally {
         if (!controller.signal.aborted) setSearching(false);
       }
-    }, 350);
-    return () => {
-      window.clearTimeout(timeout);
-      controller.abort();
-    };
+    })();
+    return () => controller.abort();
   }, [query]);
-
-  const activeInvestigationId = activeInvestigation?.id;
-  const activeInvestigationStatus = activeInvestigation?.status;
-
-  useEffect(() => {
-    if (
-      !activeInvestigationId ||
-      !activeInvestigationStatus ||
-      publicReport ||
-      ['completed', 'failed', 'cancelled'].includes(activeInvestigationStatus)
-    )
-      return;
-    let disposed = false;
-    let timeout: ReturnType<typeof setTimeout>;
-    let consecutiveErrors = 0;
-    setResearchConnection('connecting');
-    const poll = async () => {
-      try {
-        const response = await fetch(
-          `/api/investigations/${encodeURIComponent(activeInvestigationId)}`,
-        );
-        const data = await response.json();
-        if (!response.ok)
-          throw new Error(data.message || 'Could not check research progress.');
-        if (disposed) return;
-        consecutiveErrors = 0;
-        setResearchConnection('live');
-        setActiveInvestigation(data.investigation);
-        setInvestigations((current) => [
-          data.investigation,
-          ...current.filter((item) => item.id !== data.investigation.id),
-        ]);
-        if (
-          ['completed', 'failed', 'cancelled'].includes(
-            data.investigation.status,
-          )
-        ) {
-          if (data.investigation.status === 'completed')
-            setNotice(
-              `Your report on ${data.investigation.location.name} is ready.`,
-            );
-          return;
-        }
-      } catch {
-        if (disposed) return;
-        setResearchConnection('reconnecting');
-        consecutiveErrors += 1;
-        if (consecutiveErrors === 3)
-          setNotice(
-            'The connection is taking longer than usual. Your research is still saved.',
-          );
-      }
-      if (!disposed)
-        timeout = setTimeout(
-          poll,
-          Math.min(30000, 4500 * (consecutiveErrors + 1)),
-        );
-    };
-    timeout = setTimeout(poll, 1500);
-    return () => {
-      disposed = true;
-      clearTimeout(timeout);
-    };
-  }, [activeInvestigationId, activeInvestigationStatus, publicReport]);
 
   const chooseExample = useCallback(
     (example: FailExample) => {
-      reportRequest.current?.abort();
-      setReportLinkState('idle');
       setSelectedExample(example);
-      setShowInvestigation(false);
       setFocus({
         name: example.location,
         latitude: example.lat,
         longitude: example.lng,
       });
       setExplorerOpen(false);
-      updateReportUrl(`/?case=${encodeURIComponent(example.id)}`);
+      window.history.replaceState({}, '', `/?case=${encodeURIComponent(example.id)}`);
     },
-    [updateReportUrl],
+    [],
   );
 
-  const chooseInvestigation = useCallback(
-    (investigation: Investigation) => {
-      reportRequest.current?.abort();
-      setReportLinkState('idle');
-      setPublicReport(false);
-      setActiveInvestigation(investigation);
-      setShowInvestigation(true);
-      setSelectedExample(null);
-      setFocus(investigation.location);
-      setExplorerOpen(false);
-      updateReportUrl(`/?research=${encodeURIComponent(investigation.id)}`);
-      if (investigation.status === 'completed' && !investigation.report) {
-        fetch(`/api/investigations/${encodeURIComponent(investigation.id)}`)
-          .then(async (response) => {
-            const data = await response.json();
-            if (!response.ok)
-              throw new Error(data.message || 'Could not open this report.');
-            setActiveInvestigation((current) =>
-              current?.id === investigation.id ? data.investigation : current,
-            );
-          })
-          .catch((error: Error) => setNotice(error.message));
-      }
-    },
-    [updateReportUrl],
-  );
-
-  /**
-   * The explore list is the one place a reader browses story after story, so
-   * it is the one place the story tally is kept. A marker on the globe, a
-   * shared link and a story reopened from the report panel all stay free:
-   * they are single destinations, not a browsing habit.
-   */
-  const exploreExample = useCallback(
-    (example: FailExample) => {
-      if (gateApplies && gateStory(example.id, gateEnforced)) return;
-      chooseExample(example);
-    },
-    [chooseExample, gateApplies, gateEnforced, gateStory],
-  );
-
-  const chooseLocation = useCallback(
-    (location: Location) => {
-      /*
-       * Research cannot run without an account, so the ask comes before the
-       * composer rather than after the reader has filled it in, and it comes
-       * immediately. Unlike a story, there is no version of this action that
-       * works signed out, so waiting on the session lookup would only show
-       * the reader a composer they cannot submit.
-       */
-      if (gateApplies) {
-        gatedLocation.current = location;
-        if (gateResearch()) return;
-      }
-      setPendingLocation(location);
-      setResearchCategory(category);
-      setComposerError('');
-      setFocus(location);
-      setSelectedExample(null);
-      setShowInvestigation(false);
-      setExplorerOpen(false);
-    },
-    [category, gateApplies, gateResearch],
-  );
-
-  /**
-   * Walking away from the ask also drops the place behind it. Held any
-   * longer, a later plain sign-in would carry an abandoned location into the
-   * research draft and open a composer the reader never asked for.
-   */
-  function dismissSignupGate() {
-    gatedLocation.current = null;
-    dismissGate();
-  }
-
-  function closeReport() {
-    reportRequest.current?.abort();
-    setReportLinkState('idle');
-    setSelectedExample(null);
-    setShowInvestigation(false);
-    setFocus(null);
-    updateReportUrl('/');
-  }
-
-  function surprise() {
-    if (gateApplies && gateRandom(gateEnforced)) return;
-    const pool = filteredExamples.length ? filteredExamples : examples;
-    const otherExamples = pool.filter(
-      (item) => item.id !== selectedExample?.id,
-    );
-    const choices = otherExamples.length ? otherExamples : pool;
-    if (choices.length)
-      chooseExample(choices[Math.floor(Math.random() * choices.length)]);
-  }
-
-  async function connect() {
-    setSubmitting(true);
-    setComposerError('');
-    try {
-      const researchId = new URLSearchParams(window.location.search).get(
-        'research',
-      );
-      if (researchId)
-        sessionStorage.setItem('global-fail-map-resume', researchId);
-      /*
-       * The gate fires before the composer exists, so the place the reader
-       * asked about is held here. Without it, signing up would land them back
-       * on a bare globe having forgotten why they signed up.
-       */
-      const draftLocation = pendingLocation || gatedLocation.current;
-      if (draftLocation)
-        sessionStorage.setItem(
-          draftKey,
-          JSON.stringify({
-            location: draftLocation,
-            category: researchCategory,
-            instructions,
-            mode: researchMode,
-          }),
-        );
-      const result = await signInWithValyu();
-      if (result.error)
-        throw new Error('Could not connect to Valyu. Please try again.');
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Could not connect to Valyu.';
-      setComposerError(message);
-      if (!pendingLocation) setNotice(message);
-      setSubmitting(false);
-    }
-  }
-
-  async function startResearch(event: React.FormEvent) {
-    event.preventDefault();
-    if (!pendingLocation || submitting) return;
-    if (!isSelfHosted && !signedIn) {
-      await connect();
-      return;
-    }
-    setSubmitting(true);
-    setComposerError('');
-    try {
-      const input = {
-        location: pendingLocation,
-        category: researchCategory === 'all' ? 'general' : researchCategory,
-        instructions: instructions.trim() || undefined,
-        mode: researchMode,
-      };
-      const response = await fetch('/api/investigations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(
-          data.message || 'The research could not start. Please try again.',
-        );
-      setActiveInvestigation(data.investigation);
-      setPublicReport(false);
-      setFocus(data.investigation.location);
-      setInvestigations((current) => [
-        data.investigation,
-        ...current.filter((item) => item.id !== data.investigation.id),
-      ]);
-      setSelectedExample(null);
-      setShowInvestigation(true);
-      setPendingLocation(null);
-      setInstructions('');
-      setActiveTab('history');
-      updateReportUrl(
-        `/?research=${encodeURIComponent(data.investigation.id)}`,
-      );
-    } catch (error) {
-      setComposerError(
-        error instanceof Error
-          ? error.message
-          : 'The research could not start.',
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function researchFromReport() {
-    const location = selectedExample
-      ? {
-          name: selectedExample.location,
-          latitude: selectedExample.lat,
-          longitude: selectedExample.lng,
-        }
-      : activeInvestigation?.location;
-    closeReport();
-    if (location) chooseLocation(location);
-    else {
-      setExplorerOpen(true);
-      setActiveTab('atlas');
-    }
-  }
-
-  /**
-   * The masthead sits over the whole globe while the whole globe is the
-   * subject. Once the camera commits to a region it slides to the corner,
-   * wordmark and tagline together, and gives the map the middle back. The two
-   * thresholds leave a dead band so a wheel nudge around the boundary cannot
-   * flicker the masthead.
-   */
-  function trackZoom(zoom: number) {
-    const docked = headingDockedRef.current ? zoom > 1.9 : zoom > 2.2;
-    if (docked === headingDockedRef.current) return;
-    headingDockedRef.current = docked;
-    setHeadingDocked(docked);
-  }
-
-  /**
-   * Without WebGL the atlas was a black screen naming an escape hatch it did
-   * not open. Now the story list opens itself and becomes the fallback.
-   */
-  const globeUnavailable = useCallback(() => {
-    setMapless(true);
-    focusSearchOnOpen.current = false;
-    setActiveTab('atlas');
-    setExplorerOpen(true);
+  const chooseLocation = useCallback((location: Location) => {
+    setFocus(location);
+    setExplorerOpen(false);
   }, []);
 
-  async function disconnect() {
-    const result = await signOut();
-    if (result.error) {
-      setNotice('Could not disconnect your account. Please try again.');
-      return;
-    }
-    setInvestigations([]);
-    setActiveInvestigation(null);
-    setShowInvestigation(false);
-    setNotice('Signed out. The atlas is still yours to explore.');
-  }
+  const closeReport = useCallback(() => {
+    setSelectedExample(null);
+    window.history.replaceState({}, '', '/');
+  }, []);
+
+  const randomExample = useCallback(() => {
+    const filtered = filteredExamples;
+    if (!filtered.length) return;
+    const index = Math.floor(Math.random() * filtered.length);
+    const example = filtered[index];
+    if (example) chooseExample(example);
+  }, [filteredExamples, chooseExample]);
+
+  const trackZoom = useCallback((zoom: number) => {
+    const zoomed = zoom > 2;
+    headingDockedRef.current = zoomed;
+    setHeadingDocked(zoomed);
+  }, []);
+
+  const globeUnavailable = useCallback(() => {
+    setMapless(true);
+  }, []);
 
   return (
-    <main className="fail-atlas">
-      <a href="#atlas-search-trigger" className="skip-link">
-        Skip to search
-      </a>
-      <header
-        className="atlas-heading"
-        data-dock={headingDocked ? 'left' : 'center'}
-      >
+    <div className="fail-atlas">
+      <header className="atlas-heading" data-docked={headingDocked}>
         <div className="atlas-heading-inner">
           <div className="atlas-heading-mark">
-            <h1>Global Fail Map</h1>
+            <h1>Progress Map</h1>
             <span className="atlas-heading-rule" aria-hidden="true" />
           </div>
           <p>
             <span data-line="full">
-              A graveyard of failed companies, cancelled megaprojects, dead
-              science and abandoned futures.
+              Track Nigeria government projects from planning to completion.
             </span>
             {/* The corner has no room for the full line, and the wordmark
                 still needs something under it. */}
             <span data-line="short" aria-hidden="true">
-              A graveyard of abandoned futures.
+              Nigeria project atlas.
             </span>
           </p>
         </div>
@@ -769,73 +248,173 @@ export function FailAtlas({
           focusSearchOnOpen.current = false;
           setLegendOpen(false);
           setExplorerOpen(true);
-          setActiveTab('atlas');
-          setQuery('');
         }}
-        onHistory={() => {
-          focusSearchOnOpen.current = false;
-          setLegendOpen(false);
-          setExplorerOpen(true);
-          setActiveTab('history');
-          void loadInvestigations();
-        }}
+        onRandom={randomExample}
         onAbout={() => setAboutOpen(true)}
-        onRandom={surprise}
-        onConnect={connect}
-        onDisconnect={disconnect}
-        signedIn={signedIn}
-        selfHosted={isSelfHosted}
-        connecting={submitting || authLoading}
+        keyOpen={legendOpen}
       />
+      <DialogPrimitive.Root open={explorerOpen} onOpenChange={setExplorerOpen}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="atlas-overlay" />
+          <DialogPrimitive.Content className="atlas-explorer">
+            <div className="atlas-explorer-inner">
+              <div className="atlas-explorer-heading">
+                <DialogPrimitive.Title className="atlas-explorer-title">
+                  Browse projects
+                </DialogPrimitive.Title>
+                <DialogPrimitive.Close className="atlas-explorer-close">
+                  <X size={20} aria-hidden="true" />
+                  <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
+              </div>
+              <div className="atlas-explorer-search">
+                <Search size={18} className="atlas-explorer-search-icon" />
+                <input
+                  ref={searchInput}
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search by location, project name, or keyword..."
+                  className="atlas-explorer-search-input"
+                  autoFocus={focusSearchOnOpen.current}
+                />
+              </div>
+              <div className="atlas-explorer-categories">
+                {categories.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setCategory(item.id)}
+                    data-active={category === item.id}
+                    className="atlas-category-button"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="atlas-explorer-content">
+                {searching && places.length === 0 && (
+                  <p className="atlas-explorer-notice">Searching places...</p>
+                )}
+                {!searching && query && places.length > 0 && (
+                  <div className="atlas-place-results">
+                    <p className="atlas-place-results-label">
+                      Places matching &ldquo;{query}&rdquo;
+                    </p>
+                    {places.map((place) => (
+                      <button
+                        key={place.id}
+                        onClick={() => {
+                          chooseLocation({
+                            name: place.place_name,
+                            latitude: place.center[1],
+                            longitude: place.center[0],
+                          });
+                          setQuery('');
+                          setPlaces([]);
+                        }}
+                        className="atlas-place-button"
+                      >
+                        <MapPin size={16} className="atlas-place-icon" />
+                        <span>{place.place_name}</span>
+                        <ChevronRight size={16} className="atlas-place-arrow" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="atlas-example-list">
+                  {filteredExamples.length === 0 && !searching && (
+                    <p className="atlas-explorer-notice">
+                      No projects match your search.
+                    </p>
+                  )}
+                  {filteredExamples.map((example) => (
+                    <button
+                      key={example.id}
+                      onClick={() => chooseExample(example)}
+                      onMouseEnter={() => setHighlightId(example.id)}
+                      onMouseLeave={() => setHighlightId(undefined)}
+                      className="atlas-example-button"
+                    >
+                      <span className="atlas-example-button-title">
+                        {example.title}
+                      </span>
+                      <span className="atlas-example-button-subtitle">
+                        {example.subtitle}
+                      </span>
+                      <span className="atlas-example-button-meta">
+                        {example.location} · {example.period}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
       <AtlasLegend
         open={legendOpen}
-        onOpenChange={setLegendOpen}
+        onOpenChange={(open) => {
+          if (!open) setLegendOpen(false);
+        }}
         category={category}
         onCategory={setCategory}
-        showPersonal={investigations.length > 0}
+        showPersonal={false}
       />
-
-      <div className="atlas-discovery">
-        <p
-          className="atlas-invite"
-          data-invite={inviteHidden ? 'hidden' : 'shown'}
-        >
-          Choose a marker to read what happened
-        </p>
-        <div className="atlas-discovery-row">
-          <button
-            id="atlas-search-trigger"
-            className="search-trigger"
-            onClick={openSearch}
-          >
-            <Search size={18} />
-            <span>Search a place or an idea</span>
-            <kbd>/</kbd>
-          </button>
-          <button
-            className="random-story"
-            onClick={surprise}
-            aria-label="Open a random story"
-          >
-            <Shuffle size={16} />
-            <span>Random story</span>
-          </button>
-        </div>
-      </div>
+      <ReportPanel
+        example={selectedExample}
+        onClose={closeReport}
+        onArchiveSearch={
+          selectedExample && isNigerianLocation(selectedExample)
+            ? () => {
+                const url = archiveSearchUrl({
+                  subject: selectedExample.title,
+                  location: selectedExample.location,
+                  year: selectedExample.year,
+                  period: selectedExample.period,
+                });
+                if (url) window.open(url, '_blank', 'noopener,noreferrer');
+              }
+            : undefined
+        }
+      />
+      {!inviteHidden && (
+        <aside className="atlas-invite">
+          <Globe2 size={18} aria-hidden="true" />
+          <p>Choose a pin or search for a Nigeria government project</p>
+        </aside>
+      )}
+      {/* 
+        Mounted last so the twenty markers no longer sit in front of every
+        control in tab order. The globe is the painted background either way:
+        it takes z-index 0 and the chrome above it keeps z-index 2 and up.
+      */}
+      <AtlasGlobe
+        examples={filteredExamples}
+        investigations={[]}
+        paused={reportOpen}
+        focus={focus}
+        highlightId={highlightId}
+        onExample={chooseExample}
+        onInvestigation={() => {}}
+        onLocation={chooseLocation}
+        onZoom={(zoom) => {
+          const zoomed = zoom > 2;
+          headingDockedRef.current = zoomed;
+          setHeadingDocked(zoomed);
+        }}
+        onUnavailable={globeUnavailable}
+        researchOnMapClick={false}
+        keyOpen={legendOpen}
+        onKey={() => {
+          setExplorerOpen(false);
+          setLegendOpen((open) => !open);
+        }}
+      />
       <footer className="atlas-footer">
         <a
-          className="atlas-valyu"
-          href="https://valyu.ai?utm_source=global-fail-map&utm_medium=app"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Research by Valyu"
-        >
-          <span>Research by</span>
-          <Image src="/valyu.svg" width={51} height={17} alt="Valyu" />
-        </a>
-        <a
           className="atlas-github"
-          href="https://github.com/yorkeccak/global-fail-map"
+          href="https://github.com/jsodeh/global-fail-map"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="View source on GitHub"
@@ -849,480 +428,39 @@ export function FailAtlas({
           {notice}
           <button
             onClick={() => setNotice('')}
-            aria-label="Dismiss notification"
+            className="atlas-toast-close"
+            aria-label="Dismiss"
           >
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
       )}
-
-      <Dialog open={explorerOpen} onOpenChange={setExplorerOpen} modal={false}>
-        <DialogPrimitive.Portal>
-          <DialogPrimitive.Content
-            className="explorer"
-            data-slot="explorer-content"
-            onInteractOutside={(event) => {
-              if (
-                event.target instanceof Element &&
-                event.target.closest('.atlas-dock, #atlas-search-trigger')
-              ) {
-                event.preventDefault();
-              }
-            }}
-            onOpenAutoFocus={(event) => {
-              if (activeTab === 'atlas' && focusSearchOnOpen.current) {
-                event.preventDefault();
-                searchInput.current?.focus({ preventScroll: true });
-              }
-            }}
-          >
-            <div className="explorer-topline">
-              <DialogTitle>
-                {activeTab === 'atlas' ? 'Explore' : 'My research'}
-              </DialogTitle>
-              <DialogClose className="icon-button" aria-label="Close explorer">
-                <X size={18} />
-              </DialogClose>
-            </div>
-            <DialogDescription className="sr-only">
-              Find a story or research a place or idea.
-            </DialogDescription>
-            {activeTab === 'atlas' && (
-              <div className="explorer-search">
-                <Search size={16} />
-                <input
-                  ref={searchInput}
-                  id="atlas-search"
-                  autoComplete="off"
-                  placeholder="Search a place or idea"
-                  aria-label="Search places, ideas and reports"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-                {query && (
-                  <button
-                    onClick={() => setQuery('')}
-                    aria-label="Clear search"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="explorer-tabs" aria-label="Report collections">
-              <button
-                aria-pressed={activeTab === 'atlas'}
-                onClick={() => setActiveTab('atlas')}
-              >
-                Stories <span>{examples.length}</span>
-              </button>
-              <button
-                aria-pressed={activeTab === 'history'}
-                onClick={() => {
-                  setActiveTab('history');
-                  void loadInvestigations();
-                }}
-              >
-                My research
-              </button>
-            </div>
-            <div className="explorer-results">
-              {activeTab === 'atlas' ? (
-                <>
-                  {query.trim().length >= 3 && (
-                    <div className="place-results">
-                      <span className="section-label">
-                        Research{' '}
-                        {searching && <Loader2 size={12} className="spin" />}
-                      </span>
-                      {places.map((place) => (
-                        <button
-                          key={place.id}
-                          onClick={() =>
-                            chooseLocation({
-                              name: place.place_name,
-                              latitude: place.center[1],
-                              longitude: place.center[0],
-                            })
-                          }
-                        >
-                          <MapPin size={15} />
-                          <span>{place.place_name}</span>
-                          <ArrowUpRight size={14} />
-                        </button>
-                      ))}
-                      <button
-                        onClick={() =>
-                          chooseLocation({
-                            name: query.trim(),
-                            latitude: 0,
-                            longitude: 0,
-                            scope: 'worldwide',
-                          })
-                        }
-                      >
-                        <Globe2 size={15} />
-                        <span>“{query.trim()}” worldwide</span>
-                        <ArrowUpRight size={14} />
-                      </button>
-                    </div>
-                  )}
-                  <div className="collection-filter">
-                    <span>{query ? 'Matching stories' : 'Stories'}</span>
-                    <select
-                      aria-label="Filter stories by category"
-                      value={category}
-                      onChange={(event) =>
-                        setCategory(event.target.value as Category)
-                      }
-                    >
-                      {categories.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {filteredExamples.map((example) => (
-                    <button
-                      className="case-row"
-                      key={example.id}
-                      onClick={() => exploreExample(example)}
-                      onMouseEnter={() => setHighlightId(example.id)}
-                      onMouseLeave={() => setHighlightId(undefined)}
-                      onFocus={() => setHighlightId(example.id)}
-                      onBlur={() => setHighlightId(undefined)}
-                    >
-                      <span>
-                        <strong>{example.title}</strong>
-                        <small>{example.subtitle}</small>
-                        <em>
-                          {example.period} · {example.country}
-                        </em>
-                      </span>
-                      <ChevronRight size={15} />
-                    </button>
-                  ))}
-                  {!filteredExamples.length && (
-                    <div className="empty-state">
-                      <p>No matching stories.</p>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          setCategory('all');
-                          setQuery('');
-                        }}
-                      >
-                        Show all stories <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {historyLoading && (
-                    <div className="empty-state" role="status">
-                      <Loader2 size={19} className="spin" />
-                      <p>Loading your research...</p>
-                    </div>
-                  )}
-                  {!signedIn && !isSelfHosted ? (
-                    <div className="empty-state">
-                      <p>
-                        Connect Valyu to research any place and save your
-                        reports.
-                      </p>
-                      <button className="secondary-button" onClick={connect}>
-                        Connect Valyu <ArrowUpRight size={15} />
-                      </button>
-                    </div>
-                  ) : !investigations.length && !historyLoading ? (
-                    <div className="empty-state">
-                      <p>
-                        No research yet. Search a place or click the globe to
-                        begin.
-                      </p>
-                    </div>
-                  ) : (
-                    investigations.map((investigation) => (
-                      <button
-                        className="case-row"
-                        key={investigation.id}
-                        onClick={() => chooseInvestigation(investigation)}
-                      >
-                        <MapPin size={16} />
-                        <span>
-                          <strong>{investigation.location.name}</strong>
-                          <small>
-                            {new Date(
-                              investigation.createdAt,
-                            ).toLocaleDateString('en-GB', {
-                              day: 'numeric',
-                              month: 'short',
-                            })}{' '}
-                            · {investigation.status}
-                          </small>
-                        </span>
-                        <ChevronRight size={15} />
-                      </button>
-                    ))
-                  )}
-                </>
-              )}
-            </div>
-          </DialogPrimitive.Content>
-        </DialogPrimitive.Portal>
-      </Dialog>
-
-      <ReportPanel
-        example={selectedExample}
-        investigation={showInvestigation ? activeInvestigation : null}
-        onClose={closeReport}
-        onResearch={researchFromReport}
-        onRetry={researchFromReport}
-        researchConnection={researchConnection}
-        publicReport={publicReport}
-        map={
-          reportOpen ? (
-            <AtlasGlobe
-              variant="report"
-              paused
-              examples={selectedExample ? [selectedExample] : []}
-              investigations={
-                showInvestigation && activeInvestigation
-                  ? [activeInvestigation]
-                  : []
-              }
-              selectedId={selectedExample?.id}
-              focus={focus}
-              onExample={chooseExample}
-              onInvestigation={chooseInvestigation}
-              onLocation={chooseLocation}
-            />
-          ) : undefined
-        }
-      />
-
-      <Dialog
-        open={reportLinkState !== 'idle'}
-        onOpenChange={(open) => {
-          if (!open) closeReport();
-        }}
-      >
-        <DialogContent className="research-dialog">
-          <DialogTitle>
-            {reportLinkState === 'loading'
-              ? 'Opening your report'
-              : reportLinkState === 'signin'
-                ? 'Your research is saved'
-                : 'Report unavailable'}
-          </DialogTitle>
-          <DialogDescription>
-            {reportLinkState === 'loading'
-              ? 'Loading the latest research and its sources.'
-              : reportLinkState === 'signin'
-                ? 'Connect the Valyu account that created this report to open it. Private reports are only visible to their owner.'
-                : reportLinkError}
-          </DialogDescription>
-          {reportLinkState === 'loading' && (
-            <Loader2 className="spin" size={24} />
-          )}
-          {reportLinkState === 'signin' && (
-            <button
-              className="primary-button"
-              onClick={() => void connect()}
-              disabled={submitting}
-            >
-              Connect with Valyu <ArrowUpRight size={16} />
-            </button>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={!!pendingLocation}
-        onOpenChange={(open) => {
-          if (!open && !submitting) setPendingLocation(null);
-        }}
-      >
-        <DialogContent className="research-dialog" showCloseButton={false}>
-          <div className="dialog-topline">
-            <DialogTitle>New research</DialogTitle>
-            <DialogClose
-              className="icon-button"
-              aria-label="Close research setup"
-              disabled={submitting}
-            >
-              <X size={18} />
-            </DialogClose>
-          </div>
-          <DialogDescription>
-            Discover what was attempted and why it ended, with sources.
-          </DialogDescription>
-          <form onSubmit={startResearch}>
-            <div className="research-destination">
-              <MapPin size={20} />
-              <strong>{pendingLocation?.name}</strong>
-            </div>
-            <label className="field-label" htmlFor="research-category">
-              Category
-            </label>
-            <select
-              id="research-category"
-              value={researchCategory}
-              onChange={(event) =>
-                setResearchCategory(event.target.value as Category)
-              }
-            >
-              {categories.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-            <label className="field-label" htmlFor="research-instructions">
-              Focus <span>Optional</span>
-            </label>
-            <textarea
-              id="research-instructions"
-              value={instructions}
-              maxLength={2000}
-              onChange={(event) => setInstructions(event.target.value)}
-              placeholder="A company, topic or time period..."
-              rows={3}
-            />
-            <div className="research-explainer">
-              <p>
-                {isSelfHosted
-                  ? 'Uses your configured Valyu API key.'
-                  : signedIn
-                    ? 'Research with your Valyu account.'
-                    : 'Connect Valyu to start your research.'}
-              </p>
-            </div>
-            {pendingLocation && isNigerianLocation(pendingLocation) && (
-              <a
-                className="research-archive"
-                href={
-                  archiveSearchUrl({
-                    subject: pendingLocation.name,
-                    category: researchCategory,
-                  }) || undefined
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Newspaper size={15} aria-hidden="true" />
-                <span>Or read the Nigerian press on archivi.ng</span>
-                <ArrowUpRight size={13} aria-hidden="true" />
-              </a>
-            )}
-            <ResearchOptions
-              mode={researchMode}
-              onModeChange={setResearchMode}
-              notificationAvailable={notificationAvailable}
-              disabled={submitting}
-            />
-            {composerError && (
-              <p className="inline-error" role="alert">
-                {composerError}
-              </p>
-            )}
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={submitting || authLoading}
-            >
-              {submitting ? (
-                <Loader2 size={17} className="spin" />
-              ) : (
-                <ArrowUpRight size={17} />
-              )}
-              {submitting
-                ? 'One moment...'
-                : !isSelfHosted && !signedIn
-                  ? 'Connect with Valyu'
-                  : 'Start research'}
-            </button>
-            <a
-              className="research-pricing"
-              href="https://platform.valyu.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Your Valyu account <ArrowUpRight size={12} />
-            </a>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <SignupGateDialog
-        trigger={gateTrigger}
-        onDismiss={dismissSignupGate}
-        onSignUp={() => void connect()}
-        connecting={submitting || authLoading}
-      />
-
       <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
         <DialogContent className="about-dialog">
-          <DialogTitle>Global Fail Map</DialogTitle>
+          <DialogTitle>Progress Map</DialogTitle>
           <DialogDescription>
-            A map of what the world tried and left behind.
+            An atlas of Nigeria government projects tracking progress from planning to completion.
           </DialogDescription>
           <p>
-            Choose a pin to read one of {examples.length} researched stories, or
-            search any place or idea for a new report.
+            Choose a pin to read one of {examples.length} project reports, or
+            search for any Nigeria government project.
           </p>
           <p>
-            Every report follows cited evidence. Cancelled, withdrawn and
-            discontinued mean different things. A terminated trial, for example,
-            is not automatically a scientific failure.
+            Every report follows cited evidence. Track federal, state, and LGA
+            projects with budget data, status updates, and progress timelines.
           </p>
           <div className="about-links">
             <a
               className="primary-button"
-              href="https://valyu.ai"
+              href="https://github.com/jsodeh/global-fail-map"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Valyu <ArrowUpRight size={16} />
-            </a>
-            <a
-              className="secondary-button"
-              href="https://github.com/yorkeccak/global-fail-map"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Source code <ArrowUpRight size={16} />
+              GitHub <ArrowUpRight size={16} />
             </a>
           </div>
         </DialogContent>
       </Dialog>
-
-      {/*
-        Mounted last so the twenty markers no longer sit in front of every
-        control in tab order. The globe is the painted background either way:
-        it takes z-index 0 and the chrome above it keeps z-index 2 and up.
-      */}
-      <AtlasGlobe
-        examples={filteredExamples}
-        investigations={investigations}
-        paused={reportOpen}
-        focus={focus}
-        highlightId={highlightId}
-        onExample={chooseExample}
-        onInvestigation={chooseInvestigation}
-        onLocation={chooseLocation}
-        onZoom={trackZoom}
-        onUnavailable={globeUnavailable}
-        researchOnMapClick={gateApplies}
-        keyOpen={legendOpen}
-        onKey={() => {
-          setExplorerOpen(false);
-          setLegendOpen((open) => !open);
-        }}
-        activeCategory={category}
-      />
-    </main>
+    </div>
   );
 }

@@ -8,8 +8,13 @@ export const categories = [
 ] as const;
 
 export type Category = (typeof categories)[number]['id'];
-export type Location = Investigation['location'];
-export type Source = Investigation['sources'][number];
+export type Source = { title: string; url: string };
+export interface Location {
+  name: string;
+  latitude: number;
+  longitude: number;
+  scope?: 'location' | 'worldwide';
+}
 
 export interface FailExample {
   id: string;
@@ -35,6 +40,3 @@ export interface FailExample {
 export function formatCoordinates(latitude: number, longitude: number) {
   return `${Math.abs(latitude).toFixed(2)}° ${latitude < 0 ? 'S' : 'N'}  /  ${Math.abs(longitude).toFixed(2)}° ${longitude < 0 ? 'W' : 'E'}`;
 }
-import type { Investigation } from '@/lib/fail-map-types';
-
-export type { Investigation };
