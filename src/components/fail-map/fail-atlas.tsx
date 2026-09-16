@@ -11,6 +11,7 @@ import {
   MapPin,
   Newspaper,
   Search,
+  Send,
   Shuffle,
   X,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ import { archiveSearchUrl, isNigerianLocation } from '@/lib/archiving';
 import { ReportPanel } from './report-panel';
 import { AtlasDock } from './atlas-dock';
 import { AtlasLegend } from './atlas-legend';
+import { SubmissionForm } from '@/components/public/submission-form';
 import {
   categories,
   type Category,
@@ -55,6 +57,7 @@ export function FailAtlas({ examples }: { examples: FailExample[] }) {
   );
   const [focus, setFocus] = useState<Location | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [submissionFormOpen, setSubmissionFormOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
@@ -423,6 +426,23 @@ export function FailAtlas({ examples }: { examples: FailExample[] }) {
           <Github size={16} aria-hidden="true" />
         </a>
       </footer>
+      
+      {/* Floating Submit Button */}
+      <button
+        onClick={() => setSubmissionFormOpen(true)}
+        className="fixed bottom-6 right-6 z-[100] flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:shadow-xl"
+        aria-label="Submit a project"
+      >
+        <Send size={20} />
+        <span className="font-medium">Suggest a Project</span>
+      </button>
+
+      {/* Submission Form Dialog */}
+      <SubmissionForm
+        open={submissionFormOpen}
+        onOpenChange={setSubmissionFormOpen}
+      />
+      
       {notice && (
         <div className="atlas-toast" role="status">
           {notice}
