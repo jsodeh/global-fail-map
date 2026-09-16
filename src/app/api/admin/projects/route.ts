@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const tier = searchParams.get('tier');
     const state = searchParams.get('state');
+    const lga = searchParams.get('lga');
     const sector = searchParams.get('sector');
     const status = searchParams.get('status');
 
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (tier) conditions.push(eq(projects.tier, tier));
     if (state) conditions.push(eq(projects.state, state));
+    if (lga) conditions.push(eq(projects.lga, lga));
     if (sector) conditions.push(eq(projects.sector, sector));
     if (status) conditions.push(eq(projects.status, status));
 

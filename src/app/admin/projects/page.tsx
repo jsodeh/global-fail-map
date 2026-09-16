@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminSession } from '@/lib/stores/use-admin-session';
 import { Project } from '@/lib/db/schema';
+import { StateSelect } from '@/components/ui/state-select';
+import { LGASelect } from '@/components/ui/lga-select';
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -15,6 +17,9 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [stateFilter, setStateFilter] = useState('');
+  const [lgaFilter, setLgaFilter] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('');
 
   useEffect(() => {
     fetchSession();
@@ -30,7 +35,7 @@ export default function ProjectsPage() {
     if (session.isLoggedIn) {
       loadProjects();
     }
-  }, [session.isLoggedIn, search, tierFilter, statusFilter]);
+  }, [session.isLoggedIn, search, tierFilter, statusFilter, stateFilter, lgaFilter, sectorFilter]);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -39,6 +44,9 @@ export default function ProjectsPage() {
       if (search) params.set('search', search);
       if (tierFilter) params.set('tier', tierFilter);
       if (statusFilter) params.set('status', statusFilter);
+      if (stateFilter) params.set('state', stateFilter);
+      if (lgaFilter) params.set('lga', lgaFilter);
+      if (sectorFilter) params.set('sector', sectorFilter);
 
       const response = await fetch(`/api/admin/projects?${params}`);
       const data = await response.json();
@@ -105,7 +113,12 @@ export default function ProjectsPage() {
         <div className="px-4 py-6 sm:px-0">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {loading ? 'Loading...' : `${projects.length} project${projects.length !== 1 ? 's' : ''} found`}
+              </p>
+            </div>
             <Link
               href="/admin/projects/new"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -116,7 +129,7 @@ export default function ProjectsPage() {
 
           {/* Filters */}
           <div className="bg-white rounded-lg shadow p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <input
                 type="text"
                 placeholder="Search projects..."
@@ -148,16 +161,45 @@ export default function ProjectsPage() {
                 <option value="stalled">Stalled</option>
                 <option value="abandoned">Abandoned</option>
               </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <StateSelect
+                value={stateFilter}
+                onChange={(value) => {
+                  setStateFilter(value);
+                  if (lgaFilter) setLgaFilter(''); // Clear LGA when state changes
+                }}
+                className="border-gray-300"
+              />
+
+              <LGASelect
+                state={stateFilter}
+                value={lgaFilter}
+                onChange={setLgaFilter}
+                className="border-gray-300"
+              />
+
+              <input
+                type="text"
+                placeholder="Filter by sector..."
+                className="px-3 py-2 border border-gray-300 rounded-md"
+                value={sectorFilter}
+                onChange={(e) => setSectorFilter(e.target.value)}
+              />
 
               <button
                 onClick={() => {
                   setSearch('');
                   setTierFilter('');
                   setStatusFilter('');
+                  setStateFilter('');
+                  setLgaFilter('');
+                  setSectorFilter('');
                 }}
-                className="px-3 py-2 text-gray-600 hover:text-gray-900"
+                className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
               >
-                Clear Filters
+                Clear All Filters
               </button>
             </div>
           </div>
