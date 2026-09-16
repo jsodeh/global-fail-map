@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAdminSession } from '@/lib/stores/use-admin-session';
 
 export default function AdminDashboardPage() {
@@ -75,13 +76,13 @@ export default function AdminDashboardPage() {
                 Quick Links:
               </h3>
               <div className="space-y-3">
-                <a
+                <Link
                   href="/admin/projects"
                   className="block px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                 >
                   <div className="font-medium text-blue-900">Manage Projects</div>
                   <div className="text-sm text-blue-700">Create, edit, and view all projects</div>
-                </a>
+                </Link>
               </div>
             </div>
 

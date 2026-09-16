@@ -262,7 +262,7 @@ export function ProjectStatusUpdates({
 
           {!editingId && (
             <div className="bg-blue-50 border border-blue-200 px-3 py-2 rounded text-sm text-blue-800">
-              💡 Adding this status update will automatically update the project's current status.
+              💡 Adding this status update will automatically update the project&apos;s current status.
             </div>
           )}
 
