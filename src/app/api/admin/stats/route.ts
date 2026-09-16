@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { projects, submissions } from '@/lib/db/schema';
+import { projects, pendingSubmissions } from '@/lib/db/schema';
 import { requireAuth } from '@/lib/auth/server-session';
 import { eq, sql, and } from 'drizzle-orm';
 
@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
     // Get submission counts by status
     const submissionStats = await db
       .select({
-        status: submissions.status,
+        status: pendingSubmissions.status,
         count: sql<number>`count(*)::int`,
       })
-      .from(submissions)
-      .groupBy(submissions.status);
+      .from(pendingSubmissions)
+      .groupBy(pendingSubmissions.status);
 
     // Get total counts
     const [totalProjects] = await db
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     const [totalSubmissions] = await db
       .select({ count: sql<number>`count(*)::int` })
-      .from(submissions);
+      .from(pendingSubmissions);
 
     return NextResponse.json({
       projects: {
